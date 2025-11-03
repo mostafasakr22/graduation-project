@@ -14,7 +14,10 @@ class User extends Authenticatable
 
     
     protected $fillable = [
-        'name','email','password','role',
+        'name',
+        'email',
+        'password',
+        'role',
     ];
 
     protected $hidden = [
@@ -30,4 +33,10 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    //  علاقة المستخدم مع السيارات
+    public function vehicles()
+    {
+        return $this->hasMany(Vehicle::class);
+    }
 }
