@@ -27,25 +27,24 @@ Route::prefix('auth')->group(function () {
 
 
 
-// Data
-Route::middleware('auth:sanctum')->group(function () {
+// CRUD Operation for (Vehicles, Records, Crashes)
 
-    Route::prefix('vehicles')->group(function () {
-        Route::get('/', [VehiclesController::class, 'index']);
-        Route::post('/', [VehiclesController::class, 'store']);
-        Route::get('/{id}', [VehiclesController::class, 'show']);
-        Route::put('/{id}', [VehiclesController::class, 'update']);
-        Route::delete('/{id}', [VehiclesController::class, 'destroy']);
-    });
+Route::middleware('auth:sanctum')->prefix('vehicles')->group(function () {
+    Route::get('show-all', [VehiclesController::class, 'index']);
+    Route::post('add', [VehiclesController::class, 'store']);
+    Route::get('show/{id}', [VehiclesController::class, 'show']);
+    Route::patch('update/{id}', [VehiclesController::class, 'update']);
+    Route::delete('delete/{id}', [VehiclesController::class, 'delete']);
+
 
     Route::prefix('records')->group(function () {
-        Route::get('/', [RecordsController::class, 'index']);
-        Route::post('/', [RecordsController::class, 'store']);
+        Route::get('show-all', [RecordsController::class, 'index']);
+        Route::post('add', [RecordsController::class, 'store']);
     });
     
     Route::prefix('crashes')->group(function () {
-        Route::get('/', [CrashesController::class, 'index']);
-        Route::post('/', [CrashesController::class, 'store']);
+        Route::get('show-all', [CrashesController::class, 'index']);
+        Route::post('add', [CrashesController::class, 'store']);
     });
 });
 

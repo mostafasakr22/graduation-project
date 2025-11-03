@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 
 class RecordsController extends Controller
 {
+
+    // Show All Records
     public function index()
     {
         $records = Record::whereHas('vehicle', function($q){
@@ -18,6 +20,7 @@ class RecordsController extends Controller
         return response()->json($records);
     }
 
+    // Add Record
     public function store(Request $request)
     {
         $data = $request->validate([

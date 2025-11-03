@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 
 class CrashesController extends Controller
 {
+
+    // Show All Crashes
     public function index()
     {
         $crashes = Crash::whereHas('vehicle', function($q){
@@ -18,6 +20,7 @@ class CrashesController extends Controller
         return response()->json($crashes);
     }
 
+    // Add Crash
     public function store(Request $request)
     {
         $data = $request->validate([
