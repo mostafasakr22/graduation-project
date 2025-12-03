@@ -15,6 +15,7 @@ class Vehicle extends Model
         'model',
         'plate_number',
         'year',
+        'driver_id'
     ];
 
     //  السيارة تتبع مستخدم
@@ -33,5 +34,11 @@ class Vehicle extends Model
     public function crashes()
     {
         return $this->hasMany(Crash::class);
+    }
+
+
+    public function driver()
+    {
+        return $this->belongsTo(Driver::class);
     }
 }

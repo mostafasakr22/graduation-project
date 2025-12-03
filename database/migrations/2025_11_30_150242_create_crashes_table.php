@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -12,16 +13,14 @@ return new class extends Migration {
      */
     public function up()
     {
-        Schema::create('records', function (Blueprint $table) {
+        Schema::create('crashes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('vehicle_id')->constrained('vehicles')->onDelete('cascade');
-            $table->float('speed')->nullable();
-            $table->decimal('latitude', 10, 6)->nullable();
-            $table->decimal('longitude', 10, 6)->nullable();
-            $table->float('acceleration_x')->nullable();
-            $table->float('acceleration_y')->nullable();
-            $table->float('acceleration_z')->nullable();
-            $table->dateTime('recorded_at')->nullable();
+            $table->dateTime('crash_time');
+            $table->string('location')->nullable();
+            $table->enum('severity', ['low', 'medium', 'high'])->default('low');
+            $table->float('speed_before')->nullable();
+            $table->float('acceleration_impact')->nullable();
             $table->timestamps();
         });
     }
@@ -33,6 +32,6 @@ return new class extends Migration {
      */
     public function down()
     {
-        Schema::dropIfExists('records');
+        Schema::dropIfExists('crashes');
     }
 };

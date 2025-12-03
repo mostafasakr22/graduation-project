@@ -12,25 +12,24 @@ return new class extends Migration {
      */
     public function up()
     {
-        Schema::create('vehicles', function (Blueprint $table) {
+        Schema::create('drivers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('driver_id')->constrained('drivers')->onDelete('cascade')->unique();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->string('make');
-            $table->string('model');
-            $table->string('plate_number')->unique();
-            $table->year('year')->nullable();
+            $table->string('name');
+            $table->string('national_number')->unique();
+            $table->string('license_number')->unique();
+            $table->string('email')->unique();
+            $table->string('password');
+            $table->string('phone')->nullable();
             $table->timestamps();
         });
+
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
+    
     public function down()
     {
-        Schema::dropIfExists('vehicles');
+        Schema::dropIfExists('drivers');
+        
     }
 };

@@ -4,98 +4,101 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Vehicle;
-use Illuminate\Foundation\Testing\Concerns\MakesHttpRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class VehiclesController extends Controller
 {
-    // Show All Vehicles
+    // Show all vehicles 
     public function index()
     {
         $vehicles = Vehicle::where('user_id', Auth::id())->get();
-        return response()->json($vehicles);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $vehicles
+        ]);
     }
 
     // Add Vehicle
-   public function store(Request $request)
-{
-    $request->validate([
-        'plate_number' => 'required|string|unique:vehicles',
-        'make' => 'required|string',
-        'model' => 'required|string',
-        'year' => 'nullable|integer|min:1900|max:' . date('Y'),
-    ]);
+    public function store(Request $request)
+    {
+        $request->validate([
+            'plate_number' => 'required|string|unique:vehicles',
+            'make' => 'required|string',
+            'model' => 'required|string',
+            'year' => 'nullable|integer|min:1900|max:' . date('Y'),
+            'driver_id' => 'nullable|exists:drivers,id|unique:vehicles,driver_id'
+        ]);
 
-    $vehicle = Vehicle::create([
-        'user_id' => $request->user()->id,
-        'plate_number' => $request->plate_number,
-        'make' => $request->make,
-        'model' => $request->model,
-        'year' => $request->year,
-    ]);
+        $vehicle = Vehicle::create([
+            'user_id' => Auth::id(),
+            'plate_number' => $request->plate_number,
+            'make' => $request->make,
+            'model' => $request->model,
+            'year' => $request->year,
+            'driver_id' => $request->driver_id,
+        ]);
 
-    return response()->json([
-        'message' => 'Vehicle added successfully',
-        'vehicle' => $vehicle
-    ], 201);
-}
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Vehicle added successfully',
+            'data' => $vehicle
+        ], 201);
+    }
 
-
-    // Show One Vehicle
+    // Show one vehicle
     public function show($id)
     {
         $vehicle = Vehicle::where('user_id', Auth::id())->findOrFail($id);
-        return response()->json($vehicle);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $vehicle
+        ]);
     }
 
-    // Update Vehicle
- public function update(Request $request, $id)
-{
-    
-    try{ 
+    // Update vehicle
+    public function update(Request $request, $id)
+    {
         $vehicle = Vehicle::findOrFail($id);
 
-        if ($vehicle->user_id !== auth()->id()) {
+        // Authorization check
+        if ($vehicle->user_id !== Auth::id()) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'You are not authorized to update this vehicle'
             ], 403);
         }
 
-        
+        // Validation
         $validatedData = $request->validate([
             'make' => 'sometimes|string|max:255',
             'model' => 'sometimes|string|max:255',
             'plate_number' => 'sometimes|string|unique:vehicles,plate_number,' . $vehicle->id,
             'year' => 'sometimes|integer|min:1900|max:' . date('Y'),
+            'driver_id' => 'sometimes|nullable|exists:drivers,id|unique:vehicles,driver_id,' . $vehicle->id,
         ]);
 
-        
+        // Update
         $vehicle->update($validatedData);
-        $vehicle->refresh();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Updayed Successfully',
+            'message' => 'Updated successfully',
             'data' => $vehicle
-        ], 200);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'An error occurred while updating',
-            'error' => $e->getMessage()
-        ], 500);
+        ]);
     }
-}
 
-    // Delete Vehicle
+    // Delete vehicle
     public function delete($id)
     {
         $vehicle = Vehicle::where('user_id', Auth::id())->findOrFail($id);
         $vehicle->delete();
 
-        return response()->json(['message' => 'Vehicle deleted successfully']);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Vehicle deleted successfully'
+        ]);
     }
 }

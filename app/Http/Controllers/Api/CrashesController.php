@@ -9,31 +9,49 @@ use Illuminate\Support\Facades\Auth;
 
 class CrashesController extends Controller
 {
-
     // Show All Crashes
     public function index()
     {
-        $crashes = Crash::whereHas('vehicle', function($q){
-            $q->where('user_id', Auth::id());
-        })->latest()->get();
+        $crashes = Crash::with('vehicle')->get();
 
-        return response()->json($crashes);
+        return response()->json([
+            'message' => 'All crashes retrieved successfully',
+            'data' => $crashes
+        ]);
     }
 
     // Add Crash
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $validated = $request->validate([
             'vehicle_id' => 'required|exists:vehicles,id',
             'crash_time' => 'required|date',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'severity' => 'nullable|in:low,medium,high',
-            'speed_before' => 'nullable|numeric',
-            'acceleration_impact' => 'nullable|numeric',
+            'location' => 'nullable|string|max:255',
+            'severity' => 'required|in:low,medium,high',
+            'speed_before' => 'nullable|numeric|min:0',
+            'acceleration_impact' => 'nullable|numeric|min:0',
+            'description' => 'nullable|string',
         ]);
 
-        $crash = Crash::create($data);
-        return response()->json($crash, 201);
+        $crash = Crash::create($validated);
+
+        return response()->json([
+            'message' => 'Crash record added successfully',
+            'data' => $crash
+        ], 201);
+    }
+
+    // Delete Crash
+    public function delete($id)
+    {
+        $crash = Crash::find($id);
+
+        if (!$crash) {
+            return response()->json(['message' => 'Crash not found'], 404);
+        }
+
+        $crash->delete();
+
+        return response()->json(['message' => 'Crash deleted successfully']);
     }
 }

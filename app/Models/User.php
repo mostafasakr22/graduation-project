@@ -15,9 +15,17 @@ class User extends Authenticatable
     
     protected $fillable = [
         'name',
+        'national_number',
         'email',
         'password',
         'role',
+        'otp',
+        'otp_expires_at',
+    ];
+
+
+    protected $dates = [
+        'otp_expires_at',
     ];
 
     protected $hidden = [
@@ -25,11 +33,7 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
+    
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];

@@ -7,34 +7,71 @@ use App\Models\Record;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+
 class RecordsController extends Controller
 {
-
-    // Show All Records
+    
+    // Shaw All Records
     public function index()
     {
-        $records = Record::whereHas('vehicle', function($q){
-            $q->where('user_id', Auth::id());
-        })->latest()->get();
+        $records = Record::all();
+        $records = Record::with('vehicle')->get();
 
-        return response()->json($records);
+        if ($records->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No records found'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $records
+        ], 200);
     }
 
     // Add Record
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $validated = $request->validate([
             'vehicle_id' => 'required|exists:vehicles,id',
-            'speed' => 'nullable|numeric',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'acceleration_x' => 'nullable|numeric',
-            'acceleration_y' => 'nullable|numeric',
-            'acceleration_z' => 'nullable|numeric',
-            'recorded_at' => 'nullable|date',
+            'speed' => 'required|numeric|min:0',
+            'engine_temp' => 'required|numeric|min:-50|max:200',
+            'fuel_level' => 'required|numeric|min:0|max:100',
+            'location' => 'nullable|string|max:255',
+            'acceleration_x' => 'nullable|numeric|max:255',
+            'acceleration_y' => 'nullable|numeric|max:255',
+            'acceleration_z' => 'nullable|numeric|max:255',
         ]);
 
-        $record = Record::create($data);
-        return response()->json($record, 201);
+        $validated['recorded_at'] = now();
+
+        $record = Record::create($validated);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Record added successfully',
+            'data' => $record
+        ], 201);
+    }
+
+    // Delete Record
+    public function delete($id)
+    {
+        $record = Record::find($id);
+
+        if (!$record) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Record not found'
+            ], 404);
+        }
+
+        $record->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Record deleted successfully'
+        ], 200);
     }
 }

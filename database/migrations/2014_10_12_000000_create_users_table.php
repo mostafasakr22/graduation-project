@@ -11,15 +11,20 @@ return new class extends Migration {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('national_number')->unique();
             $table->string('email')->unique();
             $table->string('password');
-            $table->enum('role', ['user', 'admin'])->default('user');
+            $table->enum('role', ['owner', 'admin','driver'])->default('owner');
+            $table->string('otp')->nullable();
+            $table->timestamp('otp_expires_at')->nullable();
             $table->timestamps();
         });
     }
 
     public function down()
     {
-        Schema::dropIfExists('users');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn(['otp', 'otp_expires_at']);
+        });
     }
 };

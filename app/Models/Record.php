@@ -13,12 +13,14 @@ class Record extends Model
      protected $fillable = [
         'vehicle_id',
         'speed',
-        'latitude',
-        'longitude',
+        'location',
+        'engine_temp',
+        'fuel_level',
         'acceleration_x',
         'acceleration_y',
         'acceleration_z',
-        'recorded_at',
+        'recorded_at'
+    
     ];
 
     //  القراءة تتبع سيارة واحدة
@@ -26,4 +28,8 @@ class Record extends Model
     {
         return $this->belongsTo(Vehicle::class);
     }
+
+
+
 }
+

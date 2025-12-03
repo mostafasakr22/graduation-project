@@ -12,15 +12,13 @@ return new class extends Migration {
      */
     public function up()
     {
-        Schema::create('vehicles', function (Blueprint $table) {
+        Schema::create('password_otps', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('driver_id')->constrained('drivers')->onDelete('cascade')->unique();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->string('make');
-            $table->string('model');
-            $table->string('plate_number')->unique();
-            $table->year('year')->nullable();
+            $table->string('email');
+            $table->string('otp');
+            $table->dateTime('expires_at');
             $table->timestamps();
+
         });
     }
 
@@ -31,6 +29,6 @@ return new class extends Migration {
      */
     public function down()
     {
-        Schema::dropIfExists('vehicles');
+        Schema::dropIfExists('password_otps');
     }
 };

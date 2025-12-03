@@ -12,8 +12,7 @@ class Crash extends Model
     protected $fillable = [
         'vehicle_id',
         'crash_time',
-        'latitude',
-        'longitude',
+        'location',
         'severity',
         'speed_before',
         'acceleration_impact',

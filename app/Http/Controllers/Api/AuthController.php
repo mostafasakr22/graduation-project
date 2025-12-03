@@ -17,12 +17,14 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
             'password' => 'required|string|min:6|confirmed',
+            'national_number' => 'required|string|max:255',
         ]);
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
+            'national_number' => Hash::make($data['national_number']),
         ]);
 
         $token = $user->createToken('api_token')->plainTextToken;

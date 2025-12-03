@@ -49,6 +49,9 @@ class Kernel extends HttpKernel
 
     ];
 
+ 
+
+
     /**
      * The application's route middleware.
      *
@@ -57,6 +60,7 @@ class Kernel extends HttpKernel
      * @var array<string, class-string|string>
      */
     protected $routeMiddleware = [
+        'owner' => \App\Http\Middleware\OwnerMiddleware::class,
         'auth' => \App\Http\Middleware\Authenticate::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
