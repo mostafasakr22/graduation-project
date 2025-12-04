@@ -5,16 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Record;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-
 
 class RecordsController extends Controller
 {
-    
-    // Shaw All Records
+    // Show All Records
     public function index()
     {
-        $records = Record::all();
         $records = Record::with('vehicle')->get();
 
         if ($records->isEmpty()) {

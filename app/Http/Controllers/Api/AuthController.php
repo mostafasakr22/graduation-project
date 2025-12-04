@@ -13,12 +13,21 @@ class AuthController extends Controller
     // Register
     public function register(Request $request)
     {
-        $data = $request->validate([
+        $validator = \Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
             'password' => 'required|string|min:6|confirmed',
             'national_number' => 'required|string|max:255',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'fail',
+                'data' => $validator->errors()
+            ], 422);
+        }
+
+        $data = $validator->validated();
 
         $user = User::create([
             'name' => $data['name'],
@@ -30,40 +39,66 @@ class AuthController extends Controller
         $token = $user->createToken('api_token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
-            'token' => $token,
+            'status' => 'success',
+            'data' => [
+                'user' => $user,
+                'token' => $token,
+            ]
         ], 201);
     }
+
 
     //  Login
     public function login(Request $request)
     {
-        $data = $request->validate([
+        $validator = \Validator::make($request->all(), [
             'email' => 'required|string|email',
             'password' => 'required|string',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'fail',
+                'data' => $validator->errors()
+            ], 422);
+        }
+
+        $data = $validator->validated();
+
         $user = User::where('email', $data['email'])->first();
 
         if (!$user || !Hash::check($data['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
+            return response()->json([
+                'status' => 'fail',
+                'data' => [
+                    'credentials' => ['The provided credentials are incorrect.']
+                ]
+            ], 401);
         }
 
         $token = $user->createToken('api_token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
-            'token' => $token,
+            'status' => 'success',
+            'data' => [
+                'user' => $user,
+                'token' => $token,
+            ]
         ]);
     }
+
 
     //  Logout
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
 
-        return response()->json(['message' => 'Logged out successfully']);
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'message' => 'Logged out successfully'
+            ]
+        ]);
     }
+
 }

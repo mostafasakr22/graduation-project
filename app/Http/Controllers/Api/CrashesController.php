@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Crash;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class CrashesController extends Controller
 {
@@ -15,15 +15,17 @@ class CrashesController extends Controller
         $crashes = Crash::with('vehicle')->get();
 
         return response()->json([
-            'message' => 'All crashes retrieved successfully',
-            'data' => $crashes
+            'status' => 'success',
+            'data' => [
+                'crashes' => $crashes
+            ]
         ]);
     }
 
     // Add Crash
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'vehicle_id' => 'required|exists:vehicles,id',
             'crash_time' => 'required|date',
             'location' => 'nullable|string|max:255',
@@ -33,11 +35,20 @@ class CrashesController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $crash = Crash::create($validated);
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'fail',
+                'data' => $validator->errors()
+            ], 422);
+        }
+
+        $crash = Crash::create($validator->validated());
 
         return response()->json([
-            'message' => 'Crash record added successfully',
-            'data' => $crash
+            'status' => 'success',
+            'data' => [
+                'crash' => $crash
+            ]
         ], 201);
     }
 
@@ -47,11 +58,21 @@ class CrashesController extends Controller
         $crash = Crash::find($id);
 
         if (!$crash) {
-            return response()->json(['message' => 'Crash not found'], 404);
+            return response()->json([
+                'status' => 'fail',
+                'data' => [
+                    'message' => 'Crash not found'
+                ]
+            ], 404);
         }
 
         $crash->delete();
 
-        return response()->json(['message' => 'Crash deleted successfully']);
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'message' => 'Crash deleted successfully'
+            ]
+        ]);
     }
 }
