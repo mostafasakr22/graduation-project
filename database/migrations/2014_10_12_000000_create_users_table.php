@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->string('national_number')->unique();
             $table->string('email')->unique();
             $table->string('password');
+            $table->date('birth_date')->nullable();
             $table->enum('role', ['owner', 'admin','driver'])->default('owner');
             $table->string('otp')->nullable();
             $table->timestamp('otp_expires_at')->nullable();

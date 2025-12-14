@@ -18,6 +18,7 @@ class User extends Authenticatable
         'national_number',
         'email',
         'password',
+        'birth_date',
         'role',
         'otp',
         'otp_expires_at',

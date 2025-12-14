@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -17,7 +17,8 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
             'password' => 'required|string|min:6|confirmed',
-            'national_number' => 'required|string|max:255',
+            'national_number' => 'required|string|max:255|unique:users',
+            'birth_date' => 'required|date_format:m/d/Y',
         ]);
 
         if ($validator->fails()) {
@@ -33,7 +34,13 @@ class AuthController extends Controller
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'national_number' => Hash::make($data['national_number']),
+            'national_number' => $data['national_number'],
+
+            
+            'birth_date' => Carbon::createFromFormat(
+                'm/d/Y',
+                $data['birth_date']
+            )->format('Y-m-d'),
         ]);
 
         $token = $user->createToken('api_token')->plainTextToken;
@@ -47,8 +54,7 @@ class AuthController extends Controller
         ], 201);
     }
 
-
-    //  Login
+    // Login
     public function login(Request $request)
     {
         $validator = \Validator::make($request->all(), [
@@ -87,8 +93,7 @@ class AuthController extends Controller
         ]);
     }
 
-
-    //  Logout
+    // Logout
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
@@ -100,5 +105,4 @@ class AuthController extends Controller
             ]
         ]);
     }
-
 }
