@@ -64,7 +64,7 @@ class VehiclesController extends Controller
         $vehicle = Vehicle::findOrFail($id);
 
         // Authorization check
-        if ($vehicle->user_id !== Auth::id()) {
+        if ($vehicle->user_id != Auth::id()) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'You are not authorized to update this vehicle'
