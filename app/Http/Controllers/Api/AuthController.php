@@ -19,7 +19,6 @@ class AuthController extends Controller
             'password' => 'required|string|min:6|confirmed',
             'national_number' => 'required|string|max:255|unique:users',
             'birth_date' => 'required|date_format:m/d/Y',
-            'phone'           => 'nullable|string'
         ]);
 
         if ($validator->fails()) {
@@ -36,7 +35,6 @@ class AuthController extends Controller
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'national_number' => $data['national_number'],
-            'phone'           => 'nullable|string',
 
             
             'birth_date' => Carbon::createFromFormat(
