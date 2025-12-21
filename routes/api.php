@@ -8,55 +8,56 @@ use App\Http\Controllers\Api\RecordsController;
 use App\Http\Controllers\Api\CrashesController;
 use App\Http\Controllers\Api\DriversController;
 use App\Http\Controllers\Api\ForgotPasswordController;
+use App\Http\Controllers\Api\TripsController;
 
 
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-
-
-});
-
-// Login & Register 
+    // Register & Login
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
-
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/logout', [AuthController::class, 'logout']);
-    });
-
-
 });
 
+    // Logout
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+    // Forget Password
+    Route::post('/forget-password', [ForgotPasswordController::class, 'sendOtp']);
+    Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOtp']);
+    Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 
 
-// CRUD Operation for (Vehicles, Records, Crashes, Drivers)
 
-Route::middleware(['auth:sanctum', 'owner'])->group(function () {
+    // Trips (owner,driver)
+    Route::prefix('trips')->group(function () {
+        Route::post('/start', [TripsController::class, 'startTrip']);
+        Route::post('/end/{id}', [TripsController::class, 'endTrip']);
+        Route::post('/log-location', [TripsController::class, 'logLocation']);
+        Route::get('/history', [TripsController::class, 'getHistory']);
+        Route::get('/{id}', [TripsController::class, 'show']);
+    });
 
-    Route::middleware('auth:sanctum')->prefix('vehicles')->group(function () {
-
-        Route::get('show-all', [VehiclesController::class, 'index']);
-        Route::post('add', [VehiclesController::class, 'store']);
-        Route::get('show/{id}', [VehiclesController::class, 'show']);
-        Route::patch('update/{id}', [VehiclesController::class, 'update']);
-        Route::delete('delete/{id}', [VehiclesController::class, 'delete']);
+    // Add crash (owner,driver)
+    Route::post('/crashes/add', [CrashesController::class, 'store']);
 
 
-        Route::prefix('records')->group(callback: function () {
-            Route::get('show-all', [RecordsController::class, 'index']);
-            Route::post('add', [RecordsController::class, 'store']);
-            Route::delete('delete/{id}', [RecordsController::class, 'delete']);
+    
+    Route::middleware('owner')->group(function () {
+
+        // Vehicles
+        Route::prefix('vehicles')->group(function () {
+            Route::get('show-all', [VehiclesController::class, 'index']);
+            Route::post('add', [VehiclesController::class, 'store']);
+            Route::get('show/{id}', [VehiclesController::class, 'show']);
+            Route::patch('update/{id}', [VehiclesController::class, 'update']);
+            Route::delete('delete/{id}', [VehiclesController::class, 'delete']);
         });
 
-        Route::prefix('crashes')->group(function () {
-            Route::get('show-all', [CrashesController::class, 'index']);
-            Route::post('add', [CrashesController::class, 'store']);
-            Route::delete('delete/{id}', [CrashesController::class, 'delete']);
-
-        });
-
+        // Drivers
         Route::prefix('drivers')->group(function () {
             Route::get('show-all', [DriversController::class, 'index']);
             Route::post('add', [DriversController::class, 'store']);
@@ -64,12 +65,20 @@ Route::middleware(['auth:sanctum', 'owner'])->group(function () {
             Route::patch('update/{id}', [DriversController::class, 'update']);
             Route::delete('delete/{id}', [DriversController::class, 'delete']);
         });
-    });
+
+        // Records
+        Route::prefix('records')->group(function () {
+            Route::get('show-all', [RecordsController::class, 'index']);
+            Route::post('add', [RecordsController::class, 'store']);
+            Route::delete('delete/{id}', [RecordsController::class, 'delete']);
+        });
+
+        // crashes
+        Route::prefix('crashes')->group(function () {
+            Route::get('show-all', [CrashesController::class, 'index']);
+            Route::delete('delete/{id}', [CrashesController::class, 'delete']);
+        });
+
+    }); 
 
 });
-
-
-Route::post('/forget-password', [ForgotPasswordController::class, 'sendOtp']);
-Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOtp']);
-Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
-

@@ -10,13 +10,23 @@ class Crash extends Model
     use HasFactory;
 
     protected $fillable = [
-        'vehicle_id','trip_id',
-        'crash_time',
-        'location',
-        'severity',
-        'speed_before',
-        'acceleration_impact',
+        'vehicle_id',
+        'trip_id',             
+        'crash_time',          
+        'latitude',            
+        'longitude',           
+        'location',            
+        'severity',            
+        'speed_before',        
+        'acceleration_impact', 
     ];
+
+    
+    protected $casts = [
+        'crash_time' => 'datetime',
+    ];
+
+   
 
     // الحادث مرتبط بسيارة واحدة
     public function vehicle()
