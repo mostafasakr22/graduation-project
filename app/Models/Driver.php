@@ -28,4 +28,11 @@ class Driver extends Authenticatable
     {
         return $this->hasOne(Vehicle::class);
     }
+
+    
+     // السواق عمل رحلات كتير
+    public function trips()
+    {
+        return $this->hasMany(Trip::class);
+    }
 }

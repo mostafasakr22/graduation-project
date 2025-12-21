@@ -36,9 +36,17 @@ class Vehicle extends Model
         return $this->hasMany(Crash::class);
     }
 
+    // العربية عملت رحلات كتير
+   public function trips()
+   {
+       return $this->hasMany(Trip::class);
+   }
 
     public function driver()
     {
         return $this->belongsTo(Driver::class);
     }
+
+
+    
 }

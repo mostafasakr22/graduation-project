@@ -15,7 +15,9 @@ return new class extends Migration {
     {
         Schema::create('crashes', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('trip_id')->nullable()->constrained('trips')->onDelete('cascade');
             $table->foreignId('vehicle_id')->constrained('vehicles')->onDelete('cascade');
+           
             $table->dateTime('crash_time');
             $table->string('location')->nullable();
             $table->enum('severity', ['low', 'medium', 'high'])->default('low');

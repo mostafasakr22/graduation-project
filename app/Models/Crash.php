@@ -10,7 +10,7 @@ class Crash extends Model
     use HasFactory;
 
     protected $fillable = [
-        'vehicle_id',
+        'vehicle_id','trip_id',
         'crash_time',
         'location',
         'severity',
@@ -22,5 +22,11 @@ class Crash extends Model
     public function vehicle()
     {
         return $this->belongsTo(Vehicle::class);
+    }
+
+    // الحادثة دي حصلت ضمن رحلة
+    public function trip()
+    {
+        return $this->belongsTo(Trip::class);
     }
 }
