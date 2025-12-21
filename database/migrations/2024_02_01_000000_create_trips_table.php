@@ -13,8 +13,8 @@ return new class extends Migration
             $table->id();
             
             // العلاقات (Relationships)
-            $table->foreignId('vehicle_id')->constrained('vehicles')->onDelete('cascade');
-            $table->foreignId('driver_id')->constrained('drivers')->onDelete('cascade'); 
+            $table->foreignId('vehicle_id')->constrained('vehicles')->onDelete('no action');
+            $table->foreignId('driver_id')->constrained('drivers')->onDelete('no action'); 
 
             // التوقيتات (Timestamps)
             $table->timestamp('start_time');
