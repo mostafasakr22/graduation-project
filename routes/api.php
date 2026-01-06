@@ -18,17 +18,17 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+// Forget Password
+Route::post('/forget-password', [ForgotPasswordController::class, 'sendOtp']);
+Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOtp']);
+Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
+
     // Logout
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
-    });
+    });    
     Route::post('/auth/logout', [AuthController::class, 'logout']);
-
-    // Forget Password
-    Route::post('/forget-password', [ForgotPasswordController::class, 'sendOtp']);
-    Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOtp']);
-    Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 
 
 
