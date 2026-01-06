@@ -12,7 +12,7 @@ class Crash extends Model
     protected $fillable = [
         'vehicle_id',
         'trip_id',             
-        'crash_at',          
+        'crashed_at',          
         'latitude',            
         'longitude',           
         'location',            
@@ -23,7 +23,7 @@ class Crash extends Model
 
     
     protected $casts = [
-        'crash_at' => 'datetime',
+        'crashed_at' => 'datetime',
     ];
 
    
