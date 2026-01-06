@@ -154,7 +154,7 @@ class TripsController extends Controller
         $trip = Trip::with(['vehicle', 'driver', 'locations'])->find($id);
 
         if (!$trip) {
-            return response()->json(['status' => 'fail', 'data' => ['message' => 'Not found']], 404);
+            return response()->json(['status' => 'fail', 'data' => ['message' => 'Not found']], 402);
         }
 
         return response()->json([
