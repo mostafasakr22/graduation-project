@@ -12,7 +12,7 @@ use App\Http\Controllers\Api\TripsController;
 
 
 
-    // Register & Login
+// Register & Login
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
@@ -23,11 +23,11 @@ Route::post('/forget-password', [ForgotPasswordController::class, 'sendOtp']);
 Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOtp']);
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 
-    // Logout
+// Logout
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
-    });    
+    });
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
 
@@ -45,7 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/crashes/add', [CrashesController::class, 'store']);
 
 
-    
+
     Route::middleware('owner')->group(function () {
 
         // Vehicles
@@ -79,6 +79,6 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('delete/{id}', [CrashesController::class, 'delete']);
         });
 
-    }); 
+    });
 
 });
