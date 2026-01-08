@@ -10,18 +10,6 @@ use Illuminate\Validation\Rule;
 
 class UsersController extends Controller
 {
-    // 1. Show All Owners 
-    public function index()
-    {
-        $owners = User::where('role', 'owner')
-                      ->withCount(['vehicles', 'drivers']) 
-                      ->get();
-
-        return response()->json([
-            'status' => 'success',
-            'data' => ['owners' => $owners]
-        ]);
-    }
 
     // 2. Show One Owner 
     public function show($id)

@@ -62,7 +62,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Owners Management (يفضل نسميها owners بدل users عشان الوضوح)
         Route::prefix('owners')->group(function () {
-            Route::get('show-all', [UsersController::class, 'index']);
             Route::get('show/{id}', [UsersController::class, 'show']);
             Route::patch('update/{id}', [UsersController::class, 'update']);
             Route::delete('delete/{id}', [UsersController::class, 'delete']);
