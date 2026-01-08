@@ -3,7 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\UsersController;
+use App\Http\Controllers\Api\UsersController; // <--- ضفتلك السطر ده (كان ناقص)
 use App\Http\Controllers\Api\VehiclesController;
 use App\Http\Controllers\Api\RecordsController;
 use App\Http\Controllers\Api\CrashesController;
@@ -12,6 +12,9 @@ use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\TripsController;
 
 
+// ========================================================================
+// 1. Public Routes (بدون تسجيل دخول)
+// ========================================================================
 
 // Register & Login
 Route::prefix('auth')->group(function () {
@@ -19,21 +22,27 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
-// Forget Password
+// Forget Password (مكانها هنا صح جداً)
 Route::post('/forget-password', [ForgotPasswordController::class, 'sendOtp']);
 Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOtp']);
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 
-// Logout
+
+// ========================================================================
+// 2. Protected Routes (لازم تسجيل دخول)
+// ========================================================================
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
+    
+    // User Info & Logout
+    Route::get('/user', function (Request $request) { return $request->user(); });
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
 
-
-    // Trips (owner,driver)
+    // --------------------------------------------------------------------
+    // Operations (Drivers & Owners)
+    // --------------------------------------------------------------------
+    
+    // Trips Module
     Route::prefix('trips')->group(function () {
         Route::post('/start', [TripsController::class, 'startTrip']);
         Route::post('/end/{id}', [TripsController::class, 'endTrip']);
@@ -42,15 +51,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [TripsController::class, 'show']);
     });
 
-    // Add crash (owner,driver)
+    // Report Crash
     Route::post('/crashes/add', [CrashesController::class, 'store']);
 
 
-
+    // --------------------------------------------------------------------
+    // Administration (Owners Only)
+    // --------------------------------------------------------------------
     Route::middleware('owner')->group(function () {
 
-        // Users (owner)
-        Route::prefix('users')->group(function () {
+        // Owners Management (يفضل نسميها owners بدل users عشان الوضوح)
+        Route::prefix('owners')->group(function () {
             Route::get('show-all', [UsersController::class, 'index']);
             Route::get('show/{id}', [UsersController::class, 'show']);
             Route::patch('update/{id}', [UsersController::class, 'update']);
@@ -82,12 +93,12 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('delete/{id}', [RecordsController::class, 'delete']);
         });
 
-        // crashes
+        // Crashes Management
         Route::prefix('crashes')->group(function () {
             Route::get('show-all', [CrashesController::class, 'index']);
             Route::delete('delete/{id}', [CrashesController::class, 'delete']);
         });
 
-    });
+    }); 
 
 });
