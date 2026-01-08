@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Trip;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -60,7 +61,6 @@ class UsersController extends Controller
     // 4. Delete Owner
     public function delete($id)
      {
-        // 1. هات المالك
         $owner = User::where('role', 'owner')->find($id);
 
         if (!$owner) {
@@ -68,22 +68,26 @@ class UsersController extends Controller
         }
 
         try {
-            // 2. احذف متعلقاته الأول يدوياً (عشان نتجنب إيرور الداتابيز)
-            // (بشرط إنك تكون ضفت دوال vehicles و drivers في موديل User زي ما عملنا قبل كده)
-            
-            // مسح السائقين التابعين له
+            // 1. نجيب كل السواقين بتوع المالك ده
+            $drivers = $owner->drivers;
+
+            // 2. نمسح كل الرحلات المرتبطة بالسواقين دول
+            foreach ($drivers as $driver) {
+                Trip::where('driver_id', $driver->id)->delete();
+            }
+
+            // 3. مسح السواقين
             $owner->drivers()->delete();
             
-            // مسح المركبات التابعة له
             $owner->vehicles()->delete();
 
-            // 3. احذف المالك نفسه
+            // 5.  نمسح المالك
             $owner->delete();
 
             return response()->json([
                 'status' => 'success',
                 'data' => null,
-                'message' => 'Owner and all related data deleted successfully'
+                'message' => 'Owner and all related data (drivers, vehicles, trips) deleted successfully'
             ]);
 
         } catch (\Exception $e) {
