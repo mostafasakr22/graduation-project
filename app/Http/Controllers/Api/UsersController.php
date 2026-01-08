@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Vehicle;
+use App\Models\Driver;
+use App\Models\Record;
 use App\Models\Trip;
 use App\Models\Crash;
 use Illuminate\Http\Request;
@@ -61,41 +64,49 @@ class UsersController extends Controller
 
     // 4. Delete Owner
     public function delete($id)
-     {
+      {
+        // 1. البحث عن المالك
         $owner = User::where('role', 'owner')->find($id);
 
         if (!$owner) {
             return response()->json(['status' => 'fail', 'data' => ['message' => 'Owner not found']], 404);
         }
 
-        try {
-            
-            $vehicleIds = $owner->vehicles()->pluck('id');
-            $driverIds  = $owner->drivers()->pluck('id');
+        // 2. تجهيز القوائم (IDs) للمتعلقات
+        // بنجيب أرقام العربيات والسواقين عشان نعرف نمسح الحاجات المرتبطة بيهم الأول
+        $vehicleIds = Vehicle::where('user_id', $owner->id)->pluck('id');
+        $driverIds  = Driver::where('user_id', $owner->id)->pluck('id');
 
-            
+        // 3. مسح الحوادث (Crashes)
+        // لأن الحادثة مرتبطة بالعربية، فلازم تتمسح قبل العربية
+        if ($vehicleIds->count() > 0) {
             Crash::whereIn('vehicle_id', $vehicleIds)->delete();
+        }
 
+        // 4. مسح الرحلات (Trips)
+        // لأن الرحلة مرتبطة بالعربية والسواق
+        if ($vehicleIds->count() > 0 || $driverIds->count() > 0) {
             Trip::whereIn('vehicle_id', $vehicleIds)
                             ->orWhereIn('driver_id', $driverIds)
                             ->delete();
-
-            $owner->vehicles()->delete();
-            $owner->drivers()->delete();
-
-            $owner->delete();
-
-            return response()->json([
-                'status' => 'success',
-                'data' => null,
-                'message' => 'Owner and ALL related data (crashes, trips, vehicles, drivers) deleted successfully'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Could not delete owner: ' . $e->getMessage()
-            ], 500);
         }
+
+        // 5. مسح السجلات (Records)
+        if ($vehicleIds->count() > 0) {
+            Record::whereIn('vehicle_id', $vehicleIds)->delete();
+        }
+
+        // 6. مسح العربيات والسواقين 
+        Vehicle::whereIn('id', $vehicleIds)->delete();
+        Driver::whereIn('id', $driverIds)->delete();
+
+        // 7. مسح المالك
+        $owner->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => null,
+            'message' => 'Owner deleted successfully'
+        ]);
     }
 }
