@@ -59,15 +59,38 @@ class UsersController extends Controller
 
     // 4. Delete Owner
     public function delete($id)
-    {
+     {
+        // 1. هات المالك
         $owner = User::where('role', 'owner')->find($id);
 
         if (!$owner) {
             return response()->json(['status' => 'fail', 'data' => ['message' => 'Owner not found']], 404);
         }
 
-        $owner->delete();
+        try {
+            // 2. احذف متعلقاته الأول يدوياً (عشان نتجنب إيرور الداتابيز)
+            // (بشرط إنك تكون ضفت دوال vehicles و drivers في موديل User زي ما عملنا قبل كده)
+            
+            // مسح السائقين التابعين له
+            $owner->drivers()->delete();
+            
+            // مسح المركبات التابعة له
+            $owner->vehicles()->delete();
 
-        return response()->json(['status' => 'success', 'data' => null]);
+            // 3. احذف المالك نفسه
+            $owner->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'data' => null,
+                'message' => 'Owner and all related data deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Could not delete owner: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
