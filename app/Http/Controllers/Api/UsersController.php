@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Trip;
+use App\Models\Crash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -68,26 +69,26 @@ class UsersController extends Controller
         }
 
         try {
-            // 1. نجيب كل السواقين بتوع المالك ده
-            $drivers = $owner->drivers;
-
-            // 2. نمسح كل الرحلات المرتبطة بالسواقين دول
-            foreach ($drivers as $driver) {
-                Trip::where('driver_id', $driver->id)->delete();
-            }
-
-            // 3. مسح السواقين
-            $owner->drivers()->delete();
             
-            $owner->vehicles()->delete();
+            $vehicleIds = $owner->vehicles()->pluck('id');
+            $driverIds  = $owner->drivers()->pluck('id');
 
-            // 5.  نمسح المالك
+            
+            Crash::whereIn('vehicle_id', $vehicleIds)->delete();
+
+            Trip::whereIn('vehicle_id', $vehicleIds)
+                            ->orWhereIn('driver_id', $driverIds)
+                            ->delete();
+
+            $owner->vehicles()->delete();
+            $owner->drivers()->delete();
+
             $owner->delete();
 
             return response()->json([
                 'status' => 'success',
                 'data' => null,
-                'message' => 'Owner and all related data (drivers, vehicles, trips) deleted successfully'
+                'message' => 'Owner and ALL related data (crashes, trips, vehicles, drivers) deleted successfully'
             ]);
 
         } catch (\Exception $e) {
