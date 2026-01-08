@@ -16,6 +16,7 @@ class AuthController extends Controller
         $validator = \Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
+            'phone_number' => 'required|string|unique:users',
             'password' => 'required|string|min:6|confirmed',
             'national_number' => 'required|string|max:255|unique:users',
             'birth_date' => 'required|date_format:m/d/Y',
@@ -33,10 +34,9 @@ class AuthController extends Controller
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
+            'phone_number' => $request->phone_number,
             'password' => Hash::make($data['password']),
             'national_number' => $data['national_number'],
-
-            
             'birth_date' => Carbon::createFromFormat(
                 'm/d/Y',
                 $data['birth_date']

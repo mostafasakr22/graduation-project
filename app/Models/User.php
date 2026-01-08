@@ -15,10 +15,11 @@ class User extends Authenticatable
     
     protected $fillable = [
         'name',
-        'national_number',
         'email',
+        'phone_number',
         'password',
         'birth_date',
+        'national_number',
         'role',
         'otp',
         'otp_expires_at',
