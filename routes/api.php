@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\UsersController;
 use App\Http\Controllers\Api\VehiclesController;
 use App\Http\Controllers\Api\RecordsController;
 use App\Http\Controllers\Api\CrashesController;
@@ -47,6 +48,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     Route::middleware('owner')->group(function () {
+
+        // Users (owner)
+        Route::prefix('users')->group(function () {
+            Route::get('show-all', [UsersController::class, 'index']);
+            Route::get('show/{id}', [UsersController::class, 'show']);
+            Route::patch('update/{id}', [UsersController::class, 'update']);
+            Route::delete('delete/{id}', [UsersController::class, 'delete']);
+        });
 
         // Vehicles
         Route::prefix('vehicles')->group(function () {

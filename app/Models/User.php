@@ -42,9 +42,15 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    //  علاقة المستخدم مع السيارات
+    
     public function vehicles()
     {
         return $this->hasMany(Vehicle::class);
+    }
+
+
+    public function drivers()
+    {
+        return $this->hasMany(Driver::class); 
     }
 }
