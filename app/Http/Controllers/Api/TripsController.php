@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\LocationUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Trip;
 use App\Models\Trip_location;
@@ -15,10 +16,10 @@ class TripsController extends Controller
     public function startTrip(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'vehicle_id'    => 'required|exists:vehicles,id',
-            'driver_id'     => 'required|exists:drivers,id',
-            'start_lat'     => 'nullable|string',
-            'start_lng'     => 'nullable|string',
+            'vehicle_id' => 'required|exists:vehicles,id',
+            'driver_id' => 'required|exists:drivers,id',
+            'start_lat' => 'nullable|string',
+            'start_lng' => 'nullable|string',
             'start_address' => 'nullable|string',
         ]);
 
@@ -28,8 +29,8 @@ class TripsController extends Controller
 
         // Check if busy
         $existingTrip = Trip::where('vehicle_id', $request->vehicle_id)
-                            ->where('status', 'ongoing')
-                            ->first();
+            ->where('status', 'ongoing')
+            ->first();
 
         if ($existingTrip) {
             return response()->json([
@@ -43,13 +44,13 @@ class TripsController extends Controller
 
         // Create Trip directly
         $trip = Trip::create([
-            'vehicle_id'    => $request->vehicle_id,
-            'driver_id'     => $request->driver_id,
-            'start_time'    => Carbon::now(),
-            'start_lat'     => $request->start_lat,
-            'start_lng'     => $request->start_lng,
+            'vehicle_id' => $request->vehicle_id,
+            'driver_id' => $request->driver_id,
+            'start_time' => Carbon::now(),
+            'start_lat' => $request->start_lat,
+            'start_lng' => $request->start_lng,
             'start_address' => $request->start_address,
-            'status'        => 'ongoing'
+            'status' => 'ongoing'
         ]);
 
         return response()->json([
@@ -62,11 +63,11 @@ class TripsController extends Controller
     public function logLocation(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'trip_id'   => 'required|exists:trips,id',
-            'latitude'  => 'required',
+            'trip_id' => 'required|exists:trips,id',
+            'latitude' => 'required',
             'longitude' => 'required',
-            'speed'     => 'nullable|numeric',
-            'heading'   => 'nullable|numeric'
+            'speed' => 'nullable|numeric',
+            'heading' => 'nullable|numeric'
         ]);
 
         if ($validator->fails()) {
@@ -74,12 +75,25 @@ class TripsController extends Controller
         }
 
         $trip = Trip::find($request->trip_id);
-        
+
         if (!$trip || $trip->status !== 'ongoing') {
-            return response()->json(['status' => 'fail', 'data' => ['message' => 'Trip ended or invalid']], 400);
+            return response()->json(['status' => 'fail', 'data' => ['message' => 'Trip is ended or invalid']], 400);
         }
 
-        Trip_location::create($request->all());
+        // 1. الحفظ في الداتابيز (عشان التاريخ)
+        Trip_Location::create($request->all());
+
+        // 2. الإرسال اللايف (Live Tracking) 🚀
+        $liveData = [
+            'trip_id' => $request->trip_id,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'speed' => $request->speed,
+            'heading' => $request->heading
+        ];
+
+        // الأمر ده هو اللي بيبعت الداتا لـ Pusher
+        broadcast(new LocationUpdated($liveData));
 
         return response()->json(['status' => 'success', 'data' => null]);
     }
@@ -94,8 +108,8 @@ class TripsController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'end_lat'     => 'nullable|string',
-            'end_lng'     => 'nullable|string',
+            'end_lat' => 'nullable|string',
+            'end_lng' => 'nullable|string',
             'end_address' => 'nullable|string',
             'distance_km' => 'required|numeric'
         ]);
@@ -108,7 +122,7 @@ class TripsController extends Controller
         $endTime = Carbon::now();
         $startTime = Carbon::parse($trip->start_time);
         $hours = $startTime->diffInMinutes($endTime) / 60;
-        
+
         $avgSpeed = 0;
         if ($hours > 0 && $request->distance_km > 0) {
             $avgSpeed = $request->distance_km / $hours;
@@ -118,14 +132,14 @@ class TripsController extends Controller
         $maxSpeed = Trip_location::where('trip_id', $trip->id)->max('speed') ?? 0;
 
         $trip->update([
-            'end_time'    => $endTime,
-            'end_lat'     => $request->end_lat,
-            'end_lng'     => $request->end_lng,
+            'end_time' => $endTime,
+            'end_lat' => $request->end_lat,
+            'end_lng' => $request->end_lng,
             'end_address' => $request->end_address,
             'distance_km' => $request->distance_km,
-            'avg_speed'   => round($avgSpeed, 2),
-            'max_speed'   => round($maxSpeed, 2),
-            'status'      => 'completed'
+            'avg_speed' => round($avgSpeed, 2),
+            'max_speed' => round($maxSpeed, 2),
+            'status' => 'completed'
         ]);
 
         return response()->json([
@@ -139,8 +153,10 @@ class TripsController extends Controller
     {
         $query = Trip::with(['vehicle', 'driver'])->orderBy('created_at', 'desc');
 
-        if ($request->has('driver_id')) $query->where('driver_id', $request->driver_id);
-        if ($request->has('vehicle_id')) $query->where('vehicle_id', $request->vehicle_id);
+        if ($request->has('driver_id'))
+            $query->where('driver_id', $request->driver_id);
+        if ($request->has('vehicle_id'))
+            $query->where('vehicle_id', $request->vehicle_id);
 
         return response()->json([
             'status' => 'success',
