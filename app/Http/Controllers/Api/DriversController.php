@@ -80,7 +80,7 @@ class DriversController extends Controller
             return response()->json([
                 'status' => 'fail',
                 'data' => ['message' => 'Driver not found']
-            ], 404);
+            ], 422);
         }
 
         return response()->json([
@@ -141,7 +141,7 @@ class DriversController extends Controller
             return response()->json([
                 'status' => 'fail',
                 'data' => ['message' => 'Driver not found']
-            ], 404);
+            ], 422);
         }
 
         $driver->delete();
