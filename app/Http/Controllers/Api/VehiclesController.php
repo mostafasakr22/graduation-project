@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Driver;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -99,6 +100,39 @@ class VehiclesController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Vehicle deleted successfully'
+        ]);
+    }
+
+    // دالة عشان السواق يعرف العربية المخصصة ليه
+    public function getMyVehicle(Request $request)
+    {
+        // 1. نجيب اليوزر الحالي (السواق)
+        $user = $request->user();
+
+        // 2. نجيب ملفه من جدول السائقين
+        $driver = Driver::where('user_id', $user->id)->first();
+
+        if (!$driver) {
+            return response()->json([
+                'status' => 'fail',
+                'data' => ['message' => 'Driver profile not found']
+            ], 404);
+        }
+
+        // 3. ندور على العربية اللي مربوطة بالسواق ده
+        $vehicle = Vehicle::where('driver_id', $driver->id)->first();
+
+        if (!$vehicle) {
+            return response()->json([
+                'status' => 'fail', 
+                'data' => ['message' => 'No vehicle assigned to you yet']
+            ], 404);
+        }
+
+        // 4. نرجع بيانات العربية
+        return response()->json([
+            'status' => 'success',
+            'data' => ['vehicle' => $vehicle]
         ]);
     }
 }

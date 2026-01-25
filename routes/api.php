@@ -3,7 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\UsersController; // <--- ضفتلك السطر ده (كان ناقص)
+use App\Http\Controllers\Api\UsersController; 
 use App\Http\Controllers\Api\VehiclesController;
 use App\Http\Controllers\Api\RecordsController;
 use App\Http\Controllers\Api\CrashesController;
@@ -13,7 +13,7 @@ use App\Http\Controllers\Api\TripsController;
 
 
 // ========================================================================
-// 1. Public Routes (بدون تسجيل دخول)
+// 1. Public Routes 
 // ========================================================================
 
 // Register & Login
@@ -22,14 +22,14 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
-// Forget Password (مكانها هنا صح جداً)
+// Forget Password 
 Route::post('/forget-password', [ForgotPasswordController::class, 'sendOtp']);
 Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOtp']);
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 
 
 // ========================================================================
-// 2. Protected Routes (لازم تسجيل دخول)
+// 2. Protected Routes 
 // ========================================================================
 Route::middleware('auth:sanctum')->group(function () {
     
@@ -51,6 +51,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [TripsController::class, 'show']);
     });
 
+    //  معرفة السيارة المخصصة (للسائق)
+    Route::get('/my-vehicle', [VehiclesController::class, 'getMyVehicle']);
+
     // Report Crash
     Route::post('/crashes/add', [CrashesController::class, 'store']);
 
@@ -60,7 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // --------------------------------------------------------------------
     Route::middleware('owner')->group(function () {
 
-        // Owners Management (يفضل نسميها owners بدل users عشان الوضوح)
+        // Owners Management 
         Route::prefix('owners')->group(function () {
             Route::get('show/{id}', [UsersController::class, 'show']);
             Route::patch('update/{id}', [UsersController::class, 'update']);
