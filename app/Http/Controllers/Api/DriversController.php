@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -28,33 +29,45 @@ class DriversController extends Controller
     // Add Driver
     public function store(Request $request)
     {
+        // 1. Validation
         $validator = Validator::make($request->all(), [
             'name'            => 'required|string|max:255',
-            'national_number' => 'required|string|unique:drivers',
-            'license_number'  => 'required|string|unique:drivers',
-            'email'           => 'required|string|email|unique:drivers',
+            'email'           => 'required|email|unique:users,email', 
             'password'        => 'required|string|min:6',
+            'national_number' => 'required|string|unique:users,national_number',
+            'license_number'  => 'required|string|unique:drivers',
             'phone'           => 'nullable|string'
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 'fail',
-                'data'   => $validator->errors()
-            ], 422);
+            return response()->json(['status' => 'fail', 'data' => $validator->errors()], 422);
         }
 
-        $data = $validator->validated();
-        $data['password'] = Hash::make($data['password']);
-        $data['user_id']  = Auth::id();
+        // 2. إنشاء حساب User (للدخول)
+        $user = User::create([
+            'name'            => $request->name,
+            'email'           => $request->email,
+            'password'        => Hash::make($request->password),
+            'role'            => 'driver',
+            'national_number' => $request->national_number,
+            'phone_number'    => $request->phone,
+        ]);
 
-        $driver = Driver::create($data);
+        // 3. إنشاء ملف Driver (وربطه)
+        $driver = Driver::create([
+            'user_id'         => $user->id,        // ربط بالحساب الشخصي
+            'owner_id'        => auth()->id(),     // ربط بالمالك الحالي
+            'name'            => $request->name,
+            'national_number' => $request->national_number,
+            'license_number'  => $request->license_number,
+            'email'           => $request->email,
+            'phone'           => $request->phone
+        ]);
 
         return response()->json([
             'status' => 'success',
-            'data' => [
-                'driver' => $driver
-            ]
+            'message' => 'Driver account created successfully',
+            'data' => ['driver' => $driver]
         ], 201);
     }
 
