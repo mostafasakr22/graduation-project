@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             
             // 2. المالك اللي السواق شغال عنده (الجديد)
-            $table->foreignId('owner_id')->nullable()->constrained('users')->onDelete('cascade');
+            $table->foreignId('owner_id')->nullable()->constrained('users')->onDelete('no action');
 
             $table->string('name');
             $table->string('national_number')->unique();
