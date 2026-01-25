@@ -29,46 +29,52 @@ class DriversController extends Controller
     // Add Driver
     public function store(Request $request)
     {
-        // 1. Validation
+        // ... Validation زي ما هو ...
         $validator = Validator::make($request->all(), [
-            'name'            => 'required|string|max:255',
-            'email'           => 'required|email|unique:users,email', 
-            'password'        => 'required|string|min:6',
-            'national_number' => 'required|string|unique:users,national_number',
-            'license_number'  => 'required|string|unique:drivers',
-            'phone'           => 'nullable|string'
+            'name' => 'required', 'email' => 'required|email', 'password' => 'required',
+            'national_number' => 'required', 'license_number' => 'required', 'phone' => 'nullable'
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['status' => 'fail', 'data' => $validator->errors()], 422);
+        if ($validator->fails()) return response()->json($validator->errors(), 422);
+
+        // استخدمنا Transaction عشان لو حصل ايرور يمسح اليوزر وميسيبش داتا بايظة
+        \Illuminate\Support\Facades\DB::beginTransaction();
+
+        try {
+            // 1. Create User
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => 'driver',
+                'national_number' => $request->national_number,
+                'phone_number' => $request->phone,
+            ]);
+
+            // 2. Create Driver
+            $driver = Driver::create([
+                'user_id' => $user->id,
+                'owner_id' => auth()->id(),
+                'name' => $request->name,
+                'national_number' => $request->national_number,
+                'license_number'  => $request->license_number,
+                'email' => $request->email,
+                'phone' => $request->phone
+            ]);
+
+            \Illuminate\Support\Facades\DB::commit(); // احفظ التغييرات
+
+            return response()->json(['status' => 'success', 'data' => $driver]);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack(); // الغي كل حاجة حصلت
+            // رجعلي رسالة الخطأ بالظبط
+            return response()->json([
+                'status' => 'error', 
+                'message' => $e->getMessage(),
+                'line' => $e->getLine()
+            ], 500);
         }
-
-        // 2. إنشاء حساب User (للدخول)
-        $user = User::create([
-            'name'            => $request->name,
-            'email'           => $request->email,
-            'password'        => Hash::make($request->password),
-            'role'            => 'driver',
-            'national_number' => $request->national_number,
-            'phone_number'    => $request->phone,
-        ]);
-
-        // 3. إنشاء ملف Driver (وربطه)
-        $driver = Driver::create([
-            'user_id'         => $user->id,        // ربط بالحساب الشخصي
-            'owner_id'        => auth()->id(),     // ربط بالمالك الحالي
-            'name'            => $request->name,
-            'national_number' => $request->national_number,
-            'license_number'  => $request->license_number,
-            'email'           => $request->email,
-            'phone'           => $request->phone
-        ]);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Driver account created successfully',
-            'data' => ['driver' => $driver]
-        ], 201);
     }
 
     // Show One Driver
