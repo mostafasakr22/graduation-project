@@ -14,22 +14,27 @@ return new class extends Migration {
     {
         Schema::create('drivers', function (Blueprint $table) {
             $table->id();
+            
+            // 1. حساب السواق الشخصي (عشان يعمل Login)
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            
+            // 2. المالك اللي السواق شغال عنده (الجديد)
+            $table->foreignId('owner_id')->nullable()->constrained('users')->onDelete('cascade');
+
             $table->string('name');
             $table->string('national_number')->unique();
             $table->string('license_number')->unique();
             $table->string('email')->unique();
-            $table->string('password');
+            $table->string('password'); 
             $table->string('phone')->nullable();
+            
             $table->timestamps();
         });
-
     }
 
     
     public function down()
     {
         Schema::dropIfExists('drivers');
-        
     }
 };
