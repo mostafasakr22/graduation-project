@@ -59,6 +59,7 @@ class DriversController extends Controller
                 'national_number' => $request->national_number,
                 'license_number'  => $request->license_number,
                 'email' => $request->email,
+                'password' => Hash::make($request->password),
                 'phone' => $request->phone
             ]);
 
