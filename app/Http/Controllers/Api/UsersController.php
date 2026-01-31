@@ -109,4 +109,25 @@ class UsersController extends Controller
             'message' => 'Owner deleted successfully'
         ]);
     }
+
+    // جلب الإشعارات (للمالك)
+    public function getNotifications(Request $request)
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'unread_count' => $user->unreadNotifications->count(),
+                'notifications' => $user->notifications // ده بيرجع كل حاجة (مقروء وغير مقروء)
+            ]
+        ]);
+    }
+
+    // تعليم الكل كمقروء (لما يفتح الصفحة)
+    public function markRead(Request $request)
+    {
+        $request->user()->unreadNotifications->markAsRead();
+        return response()->json(['status' => 'success']);
+    }
 }

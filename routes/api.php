@@ -13,7 +13,7 @@ use App\Http\Controllers\Api\TripsController;
 
 
 // ========================================================================
-// 1. Public Routes 
+// 1. Public Routes (متاح للجميع)
 // ========================================================================
 
 // Register & Login
@@ -29,7 +29,7 @@ Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword'
 
 
 // ========================================================================
-// 2. Protected Routes 
+// 2. Protected Routes (لازم تسجيل دخول)
 // ========================================================================
 Route::middleware('auth:sanctum')->group(function () {
     
@@ -51,10 +51,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [TripsController::class, 'show']);
     });
 
-    //  معرفة السيارة المخصصة (للسائق)
+    // Driver: Get Assigned Vehicle (عشان السواق يعرف عربيته)
     Route::get('/my-vehicle', [VehiclesController::class, 'getMyVehicle']);
 
-    // Report Crash
+    // Driver: Report Crash
     Route::post('/crashes/add', [CrashesController::class, 'store']);
 
 
@@ -63,14 +63,19 @@ Route::middleware('auth:sanctum')->group(function () {
     // --------------------------------------------------------------------
     Route::middleware('owner')->group(function () {
 
-        // Owners Management 
+        // 1. Notifications 🔔
+        Route::get('/notifications', [UsersController::class, 'getNotifications']);
+        Route::post('/notifications/read', [UsersController::class, 'markRead']);
+
+        // 2. Owners Management 
         Route::prefix('owners')->group(function () {
+            Route::get('show-all', [UsersController::class, 'index']); 
             Route::get('show/{id}', [UsersController::class, 'show']);
             Route::patch('update/{id}', [UsersController::class, 'update']);
             Route::delete('delete/{id}', [UsersController::class, 'delete']);
         });
 
-        // Vehicles
+        // 3. Vehicles
         Route::prefix('vehicles')->group(function () {
             Route::get('show-all', [VehiclesController::class, 'index']);
             Route::post('add', [VehiclesController::class, 'store']);
@@ -79,7 +84,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('delete/{id}', [VehiclesController::class, 'delete']);
         });
 
-        // Drivers
+        // 4. Drivers
         Route::prefix('drivers')->group(function () {
             Route::get('show-all', [DriversController::class, 'index']);
             Route::post('add', [DriversController::class, 'store']);
@@ -88,14 +93,14 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('delete/{id}', [DriversController::class, 'delete']);
         });
 
-        // Records
+        // 5. Records
         Route::prefix('records')->group(function () {
             Route::get('show-all', [RecordsController::class, 'index']);
             Route::post('add', [RecordsController::class, 'store']);
             Route::delete('delete/{id}', [RecordsController::class, 'delete']);
         });
 
-        // Crashes Management
+        // 6. Crashes Management
         Route::prefix('crashes')->group(function () {
             Route::get('show-all', [CrashesController::class, 'index']);
             Route::delete('delete/{id}', [CrashesController::class, 'delete']);
