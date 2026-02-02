@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use App\Models\Vehicle;
+use App\Models\Crash;
+use App\Models\Trip;
+use App\Models\Record;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -94,11 +97,31 @@ class VehiclesController extends Controller
     // Delete vehicle
     public function delete($id)
     {
-        $vehicle = Vehicle::where('user_id', Auth::id())->findOrFail($id);
+        // 1. البحث عن Vehicle
+        $vehicle = Vehicle::find($id);
+
+        if (!$vehicle) {
+            return response()->json(
+            ['status' => 'fail', 'data' => ['message' => 'Vehicle not found']], 404);
+        }
+
+       
+        
+        // مسح crash
+        Crash::where('vehicle_id', $id)->delete();
+
+        // مسح trips
+        Trip::where('vehicle_id', $id)->delete();
+
+        // مسح records
+        Record::where('vehicle_id', $id)->delete(); 
+
+        // 3. مسح ال vehicle
         $vehicle->delete();
 
         return response()->json([
             'status' => 'success',
+            'data' => null,
             'message' => 'Vehicle deleted successfully'
         ]);
     }
