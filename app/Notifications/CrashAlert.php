@@ -2,38 +2,37 @@
 
 namespace App\Notifications;
 
-use App\Models\Crash;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class CrashAlert extends Notification
 {
     use Queueable;
 
-    public $crash;
-    public $crashData; // بيانات الحادثة
+    public $crash; // بيانات الحادثة
 
-    public function __construct($crashData)
+    public function __construct($crash)
     {
-        $this->crashData = $crashData;
+        $this->crash = $crash;
     }
 
-    // بنقوله خزن الإشعار في الداتابيز
     public function via($notifiable)
     {
-        return ['database']; 
+        return ['database']; // التخزين في الداتابيز فقط
     }
 
-    // شكل البيانات اللي هتتخزن في الداتابيز
+    // شكل البيانات اللي هتتخزن
     public function toDatabase($notifiable)
     {
-        
-       return [
-        'title'    => '🚨 Accident Alert!',
-        'body'     => 'Crash detected for vehicle: ' . $this->crash->vehicle_id,
-        'crash_id' => $this->crash->id,
-        'severity' => $this->crash->severity,
-        'time'     => now()
-    ];
+        return [
+            'title'        => '🚨 Accident Alert!',
+            'body'         => 'A crash has been detected for vehicle: ' . ($this->crash->vehicle->plate_number ?? 'Unknown'),
+            'crash_id'     => $this->crash->id,
+            'severity'     => $this->crash->severity,
+            'time'         => now(),
+            'icon'         => 'crash_alert'
+        ];
     }
 }
