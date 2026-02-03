@@ -73,34 +73,34 @@ class CrashesController extends Controller
             ]);
         }
 
-        // 5. Send Notification to Owner 
+         // 5. Send Notification 
         try {
-            // بنجيب بيانات العربية
-            $vehicle = Vehicle::find($request->vehicle_id);
+            $vehicle = Vehicle::with('driver')->find($request->vehicle_id);
             
             if ($vehicle) {
-                // محاولة 1: نجيب المالك من السواق
-                $ownerId = null;
-                if ($vehicle->driver_id) {
-                    $driver = Driver::find($vehicle->driver_id);
-                    if ($driver) $ownerId = $driver->owner_id;
+                $owner = null;
+
+                // المحاولة الأولى: هل العربية مربوطة بمالك مباشرة؟ (وده الأصح)
+                // (تأكد إن جدول vehicles فيه عمود user_id)
+                if ($vehicle->user_id) {
+                    $owner = User::find($vehicle->user_id);
+                }
+                
+                // المحاولة الثانية: لو مفيش، نجيبه عن طريق السواق
+                if (!$owner && $vehicle->driver && $vehicle->driver->owner_id) {
+                    $owner = User::find($vehicle->driver->owner_id);
                 }
 
-                // محاولة 2: لو مفيش سواق، ممكن تكون العربية مربوطة بمالك مباشرة (لو عندك user_id في vehicles)
-                if (!$ownerId && $vehicle->user_id) {
-                    $ownerId = $vehicle->user_id;
-                }
-
-                // لو لقينا المالك، نبعتله
-                if ($ownerId) {
-                    $owner = User::find($ownerId);
-                    // لازم نحمل علاقة العربية عشان تظهر في الإشعار
+                // لو لقينا المالك في أي حالة من الاتنين، نبعتله
+                if ($owner) {
+                    // بنحط العربية جوه الحادثة عشان ملف الإشعار يقرأ رقم اللوحة
                     $crash->setRelation('vehicle', $vehicle);
+                    
                     $owner->notify(new CrashAlert($crash));
                 }
             }
         } catch (\Exception $e) {
-           Log::error($e->getMessage()); 
+            Log::error("Notification failed: " . $e->getMessage());
         }
 
         return response()->json([
