@@ -31,7 +31,7 @@ class CrashesController extends Controller
 
     // Add Crash 
     public function store(Request $request)
-    {
+    { 
         // 1. Validation
         $validator = Validator::make($request->all(), [
             'vehicle_id'   => 'required|exists:vehicles,id',
