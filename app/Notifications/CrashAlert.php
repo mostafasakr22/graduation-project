@@ -28,14 +28,12 @@ class CrashAlert extends Notification
     public function toDatabase($notifiable)
     {
         
-    $vehicleInfo = $this->crash->vehicle->plate_number ?? 'ID #' . $this->crash->vehicle_id;
-        return [
-            'title'        => '🚨 Crash Detected!',
-            'body'         => "Vehicle ({$vehicleInfo}) reported a crash.",
-            'crash_id'     => $this->crash->id,
-            'severity'     => $this->crash->severity,
-            'time'         => now(),
-            'icon'         => 'crash_alert'
-        ];
+       return [
+        'title'    => '🚨 Accident Alert!',
+        'body'     => 'Crash detected for vehicle: ' . $this->crash->vehicle_id,
+        'crash_id' => $this->crash->id,
+        'severity' => $this->crash->severity,
+        'time'     => now()
+    ];
     }
 }
