@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Driver;
+use App\Models\Vehicle;
 
 class User extends Authenticatable
 {
@@ -46,12 +48,12 @@ class User extends Authenticatable
     
     public function vehicles()
     {
-        return $this->hasMany(Vehicle::class , "owner_id");
+        return $this->hasMany(Vehicle::class , 'owner_id');
     }
 
 
     public function drivers()
     {
-        return $this->hasMany(Driver::class , "owner_id"); 
+        return $this->hasMany(Driver::class , 'owner_id'); 
     }
 }
