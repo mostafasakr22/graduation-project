@@ -17,6 +17,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
             'phone_number' => 'required|string|unique:users',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'password' => 'required|string|min:6|confirmed',
             'national_number' => 'required|string|max:255|unique:users',
             'birth_date' => 'required|date_format:m/d/Y',
@@ -29,12 +30,19 @@ class AuthController extends Controller
             ], 422);
         }
 
+         $imagePath = null;
+        if ($request->hasFile('profile_image')) {
+            // بنخزنها في فولدر storage/app/public/profile_images
+            $imagePath = $request->file('profile_image')->store('profile_images', 'public');
+        }
+
         $data = $validator->validated();
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'phone_number' => $request->phone_number,
+            'profile_image' => $imagePath,
             'password' => Hash::make($data['password']),
             'national_number' => $data['national_number'],
             'birth_date' => Carbon::createFromFormat(
