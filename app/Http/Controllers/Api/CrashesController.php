@@ -1,12 +1,14 @@
 <?php
 
 namespace App\Http\Controllers\Api;
+use Illuminate\Support\Facades\Log;
 
 use App\Http\Controllers\Controller;
 use App\Models\Crash;
 use App\Models\Trip;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Models\Driver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Notifications\CrashAlert;
@@ -73,20 +75,32 @@ class CrashesController extends Controller
 
         // 5. Send Notification to Owner 
         try {
-            // بنجيب بيانات العربية عشان نعرف السواق والمالك
-            $vehicle = Vehicle::with('driver')->find($request->vehicle_id);
+            // بنجيب بيانات العربية
+            $vehicle = Vehicle::find($request->vehicle_id);
             
-            if ($vehicle && $vehicle->driver && $vehicle->driver->owner_id) {
-                // بنجيب المالك (User)
-                $owner = User::find($vehicle->driver->owner_id);
-                
-                if ($owner) {
-                    // إرسال الإشعار
+            if ($vehicle) {
+                // محاولة 1: نجيب المالك من السواق
+                $ownerId = null;
+                if ($vehicle->driver_id) {
+                    $driver = Driver::find($vehicle->driver_id);
+                    if ($driver) $ownerId = $driver->owner_id;
+                }
+
+                // محاولة 2: لو مفيش سواق، ممكن تكون العربية مربوطة بمالك مباشرة (لو عندك user_id في vehicles)
+                if (!$ownerId && $vehicle->user_id) {
+                    $ownerId = $vehicle->user_id;
+                }
+
+                // لو لقينا المالك، نبعتله
+                if ($ownerId) {
+                    $owner = User::find($ownerId);
+                    // لازم نحمل علاقة العربية عشان تظهر في الإشعار
+                    $crash->setRelation('vehicle', $vehicle);
                     $owner->notify(new CrashAlert($crash));
                 }
             }
         } catch (\Exception $e) {
-            // لو فشل الإشعار، مش مشكلة، المهم الحادثة اتسجلت
+           Log::error($e->getMessage()); 
         }
 
         return response()->json([
