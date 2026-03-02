@@ -13,99 +13,82 @@ use App\Http\Controllers\Api\TripsController;
 
 
 // ========================================================================
-// 1. Public Routes (متاح للجميع)
+// 1. Hardware Communication (رابط الهاردوير) 📟
+// ========================================================================
+// بنفصلهم عشان الهاردوير ميتعبش في موضوع الـ Auth المعقد
+// (ممكن تحميهم بـ Token ثابت في الهيدر لو حبيت، أو تسيبهم Public مؤقتاً للتجربة)
+
+Route::post('/hardware/log-location', [TripsController::class, 'logLocation']); // التتبع الذكي
+Route::post('/hardware/crash-report', [CrashesController::class, 'store']);     // الإبلاغ عن الحوادث
+
+
+// ========================================================================
+// 2. Mobile App (Owner Only) - تطبيق المالك 📱
 // ========================================================================
 
-// Register & Login
+// Authentication
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    // Password Reset
+    Route::post('/forget-password', [ForgotPasswordController::class, 'sendOtp']);
+    Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOtp']);
+    Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 });
 
-// Forget Password 
-Route::post('/forget-password', [ForgotPasswordController::class, 'sendOtp']);
-Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOtp']);
-Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
-
-
-// ========================================================================
-// 2. Protected Routes (لازم تسجيل دخول)
-// ========================================================================
-Route::middleware('auth:sanctum')->group(function () {
+// Protected Routes (للمالك فقط)
+Route::middleware(['auth:sanctum', 'owner'])->group(function () {
     
     // User Info & Logout
     Route::get('/user', function (Request $request) { return $request->user(); });
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
+    // 🔔 Notifications (أهم حاجة للمالك)
+    Route::get('/notifications', [UsersController::class, 'getNotifications']);
+    Route::post('/notifications/read', [UsersController::class, 'markRead']);
 
-    // --------------------------------------------------------------------
-    // Operations (Drivers & Owners)
-    // --------------------------------------------------------------------
-    
-    // Trips Module
-    Route::prefix('trips')->group(function () {
-        Route::post('/start', [TripsController::class, 'startTrip']);
-        Route::post('/end/{id}', [TripsController::class, 'endTrip']);
-        Route::post('/log-location', [TripsController::class, 'logLocation']);
-        Route::get('/history', [TripsController::class, 'getHistory']);
-        Route::get('/{id}', [TripsController::class, 'show']);
+    // 🗺️ Trips History (عرض الرحلات السابقة والحالية)
+    // (المالك بس هو اللي بيشوف، مش بيعمل Start)
+    Route::get('/trips/history', [TripsController::class, 'getHistory']);
+    Route::get('/trips/{id}', [TripsController::class, 'show']);
+
+    // 🚗 Vehicles Management
+    Route::prefix('vehicles')->group(function () {
+        Route::get('show-all', [VehiclesController::class, 'index']);
+        Route::post('add', [VehiclesController::class, 'store']);
+        Route::get('show/{id}', [VehiclesController::class, 'show']);
+        Route::patch('update/{id}', [VehiclesController::class, 'update']);
+        Route::delete('delete/{id}', [VehiclesController::class, 'delete']);
     });
 
-    // Driver: Get Assigned Vehicle (عشان السواق يعرف عربيته)
-    Route::get('/my-vehicle', [VehiclesController::class, 'getMyVehicle']);
+    // 👤 Owners Profile
+    Route::prefix('owners')->group(function () {
+        Route::get('show-all', [UsersController::class, 'index']); 
+        Route::get('show/{id}', [UsersController::class, 'show']);
+        Route::patch('update/{id}', [UsersController::class, 'update']);
+        Route::delete('delete/{id}', [UsersController::class, 'delete']);
+    });
 
-    // Driver: Report Crash
-    Route::post('/crashes/add', [CrashesController::class, 'store']);
+    // 🧑‍✈️ Drivers Management (لسه موجود عشان المالك يسجل مين السواق)
+    Route::prefix('drivers')->group(function () {
+        Route::get('show-all', [DriversController::class, 'index']);
+        Route::post('add', [DriversController::class, 'store']);
+        Route::get('show/{id}', [DriversController::class, 'show']);
+        Route::patch('update/{id}', [DriversController::class, 'update']);
+        Route::delete('delete/{id}', [DriversController::class, 'delete']);
+    });
 
+    // 💥 Crashes View (عرض الحوادث فقط)
+    Route::prefix('crashes')->group(function () {
+        Route::get('show-all', [CrashesController::class, 'index']);
+        Route::delete('delete/{id}', [CrashesController::class, 'delete']);
+    });
 
-    // --------------------------------------------------------------------
-    // Administration (Owners Only)
-    // --------------------------------------------------------------------
-    Route::middleware('owner')->group(function () {
-
-        // 1. Notifications 🔔
-        Route::get('/notifications', [UsersController::class, 'getNotifications']);
-        Route::post('/notifications/read', [UsersController::class, 'markRead']);
-
-        // 2. Owners Management 
-        Route::prefix('owners')->group(function () {
-            Route::get('show-all', [UsersController::class, 'index']); 
-            Route::get('show/{id}', [UsersController::class, 'show']);
-            Route::patch('update/{id}', [UsersController::class, 'update']);
-            Route::delete('delete/{id}', [UsersController::class, 'delete']);
-        });
-
-        // 3. Vehicles
-        Route::prefix('vehicles')->group(function () {
-            Route::get('show-all', [VehiclesController::class, 'index']);
-            Route::post('add', [VehiclesController::class, 'store']);
-            Route::get('show/{id}', [VehiclesController::class, 'show']);
-            Route::patch('update/{id}', [VehiclesController::class, 'update']);
-            Route::delete('delete/{id}', [VehiclesController::class, 'delete']);
-        });
-
-        // 4. Drivers
-        Route::prefix('drivers')->group(function () {
-            Route::get('show-all', [DriversController::class, 'index']);
-            Route::post('add', [DriversController::class, 'store']);
-            Route::get('show/{id}', [DriversController::class, 'show']);
-            Route::patch('update/{id}', [DriversController::class, 'update']);
-            Route::delete('delete/{id}', [DriversController::class, 'delete']);
-        });
-
-        // 5. Records
-        Route::prefix('records')->group(function () {
-            Route::get('show-all', [RecordsController::class, 'index']);
-            Route::post('add', [RecordsController::class, 'store']);
-            Route::delete('delete/{id}', [RecordsController::class, 'delete']);
-        });
-
-        // 6. Crashes Management
-        Route::prefix('crashes')->group(function () {
-            Route::get('show-all', [CrashesController::class, 'index']);
-            Route::delete('delete/{id}', [CrashesController::class, 'delete']);
-        });
-
-    }); 
+    // 📄 Records
+    Route::prefix('records')->group(function () {
+        Route::get('show-all', [RecordsController::class, 'index']);
+        Route::post('add', [RecordsController::class, 'store']);
+        Route::delete('delete/{id}', [RecordsController::class, 'delete']);
+    });
 
 });
