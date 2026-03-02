@@ -29,57 +29,26 @@ class DriversController extends Controller
     // Add Driver
     public function store(Request $request)
     {
-        // ... Validation زي ما هو ...
+        // 1. Validation 
         $validator = Validator::make($request->all(), [
-            'name' => 'required',
-            'email' => 'required|email',
-            'password' => 'required',
-            'national_number' => 'required',
-            'license_number' => 'required',
-            'phone' => 'nullable'
+            'name'=> 'required|string|max:255',
         ]);
 
-        if ($validator->fails())
-            return response()->json($validator->errors(), 422);
-
-        \Illuminate\Support\Facades\DB::beginTransaction();
-
-        try {
-            // 1. Create User
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'role' => 'driver',
-                'national_number' => $request->national_number,
-                'phone_number' => $request->phone,
-            ]);
-
-            // 2. Create Driver
-            $driver = Driver::create([
-                'user_id' => $user->id,
-                'owner_id' => auth()->id(),
-                'name' => $request->name,
-                'national_number' => $request->national_number,
-                'license_number' => $request->license_number,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'phone' => $request->phone
-            ]);
-
-            \Illuminate\Support\Facades\DB::commit(); 
-
-            return response()->json(['status' => 'success', 'data' => $driver]);
-
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\DB::rollBack(); 
-            // رجعلي رسالة الخطأ بالظبط
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage(),
-                'line' => $e->getLine()
-            ], 500);
+        if ($validator->fails()) {
+            return response()->json(['status' => 'fail', 'data' => $validator->errors()], 422);
         }
+
+        // 2. إنشاء السائق (بيانات فقط)
+        $driver = Driver::create([
+            'owner_id'=> auth()->id(),
+            'name'    => $request->name,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Driver added successfully',
+            'data' => ['driver' => $driver]
+        ], 201);
     }
 
     // Show One Driver
@@ -114,11 +83,6 @@ class DriversController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:255',
-            'national_number' => 'sometimes|string|unique:drivers,national_number,' . $driver->id,
-            'license_number' => 'sometimes|string|unique:drivers,license_number,' . $driver->id,
-            'email' => 'sometimes|string|email|unique:drivers,email,' . $driver->id,
-            'password' => 'sometimes|string|min:6',
-            'phone' => 'sometimes|string',
         ]);
 
         if ($validator->fails()) {

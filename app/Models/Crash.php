@@ -11,22 +11,27 @@ class Crash extends Model
 
     protected $fillable = [
         'vehicle_id',
-        'trip_id',             
-        'crashed_at',          
-        'latitude',            
-        'longitude',           
-        'location',            
-        'severity',            
-        'speed_before',        
-        'acceleration_impact', 
+        'trip_id',
+        'crashed_at',
+        'latitude',
+        'longitude',
+        'location',
+        'type',
+        'severity', // النوع والخطورة
+        'g_force_x',
+        'g_force_y',
+        'g_force_z',
+        'yaw', // قراءات الحساسات
+        'speed_before',
+        'rpm_before'
     ];
 
-    
+
     protected $casts = [
         'crashed_at' => 'datetime',
     ];
 
-   
+
 
     // الحادث مرتبط بسيارة واحدة
     public function vehicle()

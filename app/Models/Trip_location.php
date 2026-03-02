@@ -10,11 +10,17 @@ class Trip_location extends Model
     use HasFactory;
 
     protected $fillable = [
-        'trip_id', 
-        'latitude', 
-        'longitude', 
-        'speed', 
-        'heading'
+        'trip_id',
+        'latitude',
+        'longitude',
+        'speed',
+        'heading',
+        'rpm',
+        'altitude',
+        'ax',
+        'ay',
+        'az',
+        'yaw'
     ];
 
     // النقطة دي تابعة لرحلة معينة

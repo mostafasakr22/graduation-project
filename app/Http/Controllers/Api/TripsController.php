@@ -59,66 +59,77 @@ class TripsController extends Controller
     }
 
     // 2. Log Location
-     public function logLocation(Request $request)
+    public function logLocation(Request $request)
     {
-        // 1. التعديل في الفاليدايشن: طلبنا vehicle_id بدل trip_id
+        // 1. Validation 
         $validator = Validator::make($request->all(), [
-            'vehicle_id' => 'required|exists:vehicles,id', // الهاردوير لازم يبعت رقم العربية
+            'vehicle_id' => 'required|exists:vehicles,id',
             'latitude'   => 'required',
             'longitude'  => 'required',
             'speed'      => 'nullable|numeric',
-            'heading'    => 'nullable|numeric'
+            'heading'    => 'nullable|numeric',
+            'rpm'        => 'nullable|integer', // دوران المحرك
+            'altitude'   => 'nullable|numeric', // الارتفاع
+            'ax'         => 'nullable|numeric', // تسارع طولي
+            'ay'         => 'nullable|numeric', // تسارع جانبي
+            'az'         => 'nullable|numeric', // تسارع رأسي
+            'yaw'        => 'nullable|numeric', // زاوية الانحراف
         ]);
 
         if ($validator->fails()) {
             return response()->json(['status' => 'fail', 'data' => $validator->errors()], 422);
         }
 
-        // 2. البحث عن رحلة مفتوحة للعربية دي
+        // 2. البحث عن الرحلة أو إنشاؤها (Auto-Start Logic)
         $trip = Trip::where('vehicle_id', $request->vehicle_id)
                     ->where('status', 'ongoing')
                     ->latest()
                     ->first();
 
-        // 3. (Auto-Start) لو مفيش رحلة مفتوحة، نفتح واحدة جديدة أوتوماتيك
         if (!$trip) {
-            // نجيب السواق المربوط بالعربية دي عشان نسجل الرحلة باسمه
             $vehicle = Vehicle::find($request->vehicle_id);
-            $driverId = $vehicle->driver_id; // ممكن يكون null لو العربية ملهاش سواق، وده عادي
-
             $trip = Trip::create([
                 'vehicle_id'    => $request->vehicle_id,
-                'driver_id'     => $driverId, // سجلنا السواق أوتوماتيك
+                'driver_id'     => $vehicle->driver_id,
                 'start_time'    => now(),
                 'start_lat'     => $request->latitude,
                 'start_lng'     => $request->longitude,
-                'start_address' => 'Auto-started by Hardware',
+                'start_address' => 'Auto-started',
                 'status'        => 'ongoing'
             ]);
         }
 
-        // 4. تسجيل النقطة (Log)
-        Trip_location::create([
+        // 3. حفظ النقطة بكل التفاصيل الجديدة
+        Trip_Location::create([
             'trip_id'   => $trip->id,
             'latitude'  => $request->latitude,
             'longitude' => $request->longitude,
             'speed'     => $request->speed,
-            'heading'   => $request->heading
+            'heading'   => $request->heading,
+            'rpm'       => $request->rpm,
+            'altitude'  => $request->altitude,
+            'ax'        => $request->ax,
+            'ay'        => $request->ay,
+            'az'        => $request->az,
+            'yaw'       => $request->yaw,
         ]);
 
-        // 5. الإرسال اللايف (Pusher)
+        // 4. الإرسال اللايف (Pusher) 🚀
+        // بنبعت الداتا دي كمان عشان لو المالك عايز يشوف عداد RPM لايف
         $liveData = [
-            'trip_id'   => $trip->id,
-            'vehicle_id'=> $request->vehicle_id, // ضفنا رقم العربية عشان المالك يميز
-            'latitude'  => $request->latitude,
-            'longitude' => $request->longitude,
-            'speed'     => $request->speed,
-            'heading'   => $request->heading
+            'trip_id'    => $trip->id,
+            'vehicle_id' => $request->vehicle_id,
+            'latitude'   => $request->latitude,
+            'longitude'  => $request->longitude,
+            'speed'      => $request->speed,
+            'heading'    => $request->heading,
+            'rpm'        => $request->rpm,      
+            'altitude'   => $request->altitude  
         ];
 
         broadcast(new LocationUpdated($liveData));
 
-        return response()->json(['status' => 'success', 'message' => 'Logged & Auto-managed']);
+        return response()->json(['status' => 'success', 'message' => 'Logged']);
     }
 
     // 3. End Trip
