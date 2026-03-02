@@ -91,4 +91,7 @@ Route::middleware(['auth:sanctum', 'owner'])->group(function () {
         Route::delete('delete/{id}', [RecordsController::class, 'delete']);
     });
 
+    // تقرير السائق
+    Route::get('/drivers/{id}/score', [DriversController::class, 'getScore']);
+
 });
