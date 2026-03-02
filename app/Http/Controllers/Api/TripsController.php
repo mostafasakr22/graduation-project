@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Trip;
+use App\Models\Vehicle;
 use App\Models\Trip_location;
 use App\Events\LocationUpdated;
 use Illuminate\Http\Request;
@@ -58,32 +59,57 @@ class TripsController extends Controller
     }
 
     // 2. Log Location
-    public function logLocation(Request $request)
+     public function logLocation(Request $request)
     {
+        // 1. التعديل في الفاليدايشن: طلبنا vehicle_id بدل trip_id
         $validator = Validator::make($request->all(), [
-            'trip_id'   => 'required|exists:trips,id',
-            'latitude'  => 'required',
-            'longitude' => 'required',
-            'speed'     => 'nullable|numeric',
-            'heading'   => 'nullable|numeric'
+            'vehicle_id' => 'required|exists:vehicles,id', // الهاردوير لازم يبعت رقم العربية
+            'latitude'   => 'required',
+            'longitude'  => 'required',
+            'speed'      => 'nullable|numeric',
+            'heading'    => 'nullable|numeric'
         ]);
 
         if ($validator->fails()) {
             return response()->json(['status' => 'fail', 'data' => $validator->errors()], 422);
         }
 
-        $trip = Trip::find($request->trip_id);
-        
-        if (!$trip || $trip->status !== 'ongoing') {
-            return response()->json(['status' => 'fail', 'data' => ['message' => 'Trip is ended or invalid']], 400);
+        // 2. البحث عن رحلة مفتوحة للعربية دي
+        $trip = Trip::where('vehicle_id', $request->vehicle_id)
+                    ->where('status', 'ongoing')
+                    ->latest()
+                    ->first();
+
+        // 3. (Auto-Start) لو مفيش رحلة مفتوحة، نفتح واحدة جديدة أوتوماتيك
+        if (!$trip) {
+            // نجيب السواق المربوط بالعربية دي عشان نسجل الرحلة باسمه
+            $vehicle = Vehicle::find($request->vehicle_id);
+            $driverId = $vehicle->driver_id; // ممكن يكون null لو العربية ملهاش سواق، وده عادي
+
+            $trip = Trip::create([
+                'vehicle_id'    => $request->vehicle_id,
+                'driver_id'     => $driverId, // سجلنا السواق أوتوماتيك
+                'start_time'    => now(),
+                'start_lat'     => $request->latitude,
+                'start_lng'     => $request->longitude,
+                'start_address' => 'Auto-started by Hardware',
+                'status'        => 'ongoing'
+            ]);
         }
 
-        // 1. الحفظ
-        Trip_location::create($request->all()); 
+        // 4. تسجيل النقطة (Log)
+        Trip_location::create([
+            'trip_id'   => $trip->id,
+            'latitude'  => $request->latitude,
+            'longitude' => $request->longitude,
+            'speed'     => $request->speed,
+            'heading'   => $request->heading
+        ]);
 
-        // 2. الإرسال اللايف
+        // 5. الإرسال اللايف (Pusher)
         $liveData = [
-            'trip_id'   => $request->trip_id,
+            'trip_id'   => $trip->id,
+            'vehicle_id'=> $request->vehicle_id, // ضفنا رقم العربية عشان المالك يميز
             'latitude'  => $request->latitude,
             'longitude' => $request->longitude,
             'speed'     => $request->speed,
@@ -92,7 +118,7 @@ class TripsController extends Controller
 
         broadcast(new LocationUpdated($liveData));
 
-        return response()->json(['status' => 'success', 'data' => null]);
+        return response()->json(['status' => 'success', 'message' => 'Logged & Auto-managed']);
     }
 
     // 3. End Trip
