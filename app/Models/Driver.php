@@ -10,18 +10,13 @@ class Driver extends Authenticatable
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
         'owner_id',
         'name',
-        'email',
-        'password',
-        'national_number',
-        'license_number',
-        'phone',
+        
     ];
 
     protected $hidden = [
-        'password'
+        //
     ];
 
     
