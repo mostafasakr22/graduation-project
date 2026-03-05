@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use App\Models\Crash;
 use App\Models\Trip_location;
+use App\Models\Trip;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -132,14 +133,15 @@ class DriversController extends Controller
     // (Driver Scorecard)
     public function getScore($id)
     {
-        $driver =Driver::find($id);
+        // استخدم المسار الكامل للموديل لتجنب الأخطاء
+        $driver = Driver::find($id);
 
         if (!$driver) {
             return response()->json(['status' => 'fail', 'data' => ['message' => 'Driver not found']], 404);
         }
 
-        // 1. تجميع البيانات من الرحلات السابقة
-        $tripIds = $driver->trips()->pluck('id'); // نجيب كل أرقام رحلاته
+        // 1. تجميع الرحلات
+        $tripIds = $driver->trips()->pluck('id');
 
         if ($tripIds->isEmpty()) {
             return response()->json([
@@ -147,53 +149,71 @@ class DriversController extends Controller
                 'data' => [
                     'driver_name' => $driver->name,
                     'score' => 100, 
-                    'rating' => 'Excellent',
+                    'rating' => 'Fresh', 
                     'stats' => 'No trips yet'
                 ]
             ]);
         }
 
-        // 2. إحصائيات السلوك (من جدول crashes/events)
+        // 2. حساب الخصومات 
         $events = Crash::whereIn('trip_id', $tripIds)->get();
         
+        $speedingCount = Trip_Location::whereIn('trip_id', $tripIds)
+                                                ->where('speed', '>', 120)
+                                                ->count();
+
         $majorCrashes   = $events->where('type', 'major_crash')->count();
         $hardBraking    = $events->where('type', 'hard_braking')->count();
         $aggressiveTurn = $events->where('type', 'aggressive_turn')->count();
 
-        // 3. إحصائيات السرعة (من جدول trip_locations)
-        $speedingCount =Trip_Location::whereIn('trip_id', $tripIds)
-                                                ->where('speed', '>', 120)
-                                                ->count();
+        // تجميع الخصم
+        $totalPenalty = 0;
+        $totalPenalty += ($majorCrashes * 40);
+        $totalPenalty += ($hardBraking * 5);
+        $totalPenalty += ($aggressiveTurn * 5);
+        $totalPenalty += ($speedingCount * 0.5);
 
-        // 4. المعادلة الحسابية (Score Calculation)
-        $score = 100;
-        $score -= ($majorCrashes * 40);   // خصم كبير للحوادث
-        $score -= ($hardBraking * 5);     // خصم متوسط للفرملة
-        $score -= ($aggressiveTurn * 5);  // خصم متوسط للانعطاف
-        $score -= ($speedingCount * 0.5); // خصم بسيط لكل نقطة سرعة (لأنها بتتكرر كتير)
+        // 3. حساب المكافآت 
+        // بنجمع المسافة اللي مشيها في كل الرحلات
+        $totalDistance = Trip::whereIn('id', $tripIds)->sum('distance_km');
 
-        // التأكد إن السكور مش بالسالب (أقل حاجة صفر)
-        $score = max(0, round($score));
+        // المعادلة: كل 50 كم = +5 نقاط
+        $bonusPoints = floor($totalDistance / 50) * 5;
+
+        // 4. المعادلة النهائية (100 - خصم + مكافأة)
+        $score = 100 - $totalPenalty + $bonusPoints;
+
+        $score = min(100, max(0, round($score)));
 
         // 5. التقييم اللفظي
-        $rating = 'Excellent';                  // 90-100
-        if ($score < 90) $rating = 'Good';      // 75-89
-        if ($score < 75) $rating = 'Average';   // 50-74
-        if ($score < 50) $rating = 'Bad';       // 25-49
-        if ($score < 25) $rating = 'Dangerous'; // 0-24
+        $rating = 'Excellent';
+        if ($score < 90) $rating = 'Good';
+        if ($score < 75) $rating = 'Average';
+        if ($score < 50) $rating = 'Bad';
+        if ($score < 25) $rating = 'Dangerous';
 
         return response()->json([
             'status' => 'success',
             'data' => [
                 'driver_name' => $driver->name,
                 'total_trips' => $tripIds->count(),
+                'total_distance_km' => round($totalDistance, 2), 
                 'overall_score' => $score,
                 'rating' => $rating,
                 'breakdown' => [
-                    'major_crashes' => $majorCrashes,
-                    'hard_braking_events' => $hardBraking,
-                    'aggressive_turns' => $aggressiveTurn,
-                    'speeding_incidents' => $speedingCount
+                    'penalties' => [
+                        'points_lost' => $totalPenalty,
+                        'details' => [
+                            'major_crashes' => $majorCrashes,
+                            'hard_braking' => $hardBraking,
+                            'aggressive_turns' => $aggressiveTurn,
+                            'speeding_incidents' => $speedingCount
+                        ]
+                    ],
+                    'bonuses' => [
+                        'points_gained' => $bonusPoints,
+                        'reason' => 'Safe driving distance (+5 pts / 50km)'
+                    ]
                 ]
             ]
         ]);
