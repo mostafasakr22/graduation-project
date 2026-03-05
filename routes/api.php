@@ -5,7 +5,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UsersController; 
 use App\Http\Controllers\Api\VehiclesController;
-use App\Http\Controllers\Api\RecordsController;
 use App\Http\Controllers\Api\CrashesController;
 use App\Http\Controllers\Api\DriversController;
 use App\Http\Controllers\Api\ForgotPasswordController;
@@ -82,13 +81,6 @@ Route::middleware(['auth:sanctum', 'owner'])->group(function () {
     Route::prefix('crashes')->group(function () {
         Route::get('show-all', [CrashesController::class, 'index']);
         Route::delete('delete/{id}', [CrashesController::class, 'delete']);
-    });
-
-    // 📄 Records
-    Route::prefix('records')->group(function () {
-        Route::get('show-all', [RecordsController::class, 'index']);
-        Route::post('add', [RecordsController::class, 'store']);
-        Route::delete('delete/{id}', [RecordsController::class, 'delete']);
     });
 
     // تقرير السائق
