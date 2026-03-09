@@ -135,65 +135,37 @@ class VehiclesController extends Controller
     // Delete vehicle
     public function delete($id)
     {
-        // 1. البحث عن Vehicle
         $vehicle = Vehicle::find($id);
 
         if (!$vehicle) {
-            return response()->json(
-            ['status' => 'fail', 'data' => ['message' => 'Vehicle not found']], 404);
+            return response()->json(['status' => 'fail', 'data' => ['message' => 'Vehicle not found']], 404);
         }
 
-       
-        
-        // مسح crash
+        // أمان: تأكد إن المالك هو اللي بيمسح عربيته
+        if ($vehicle->user_id != auth()->id()) {
+            return response()->json(['status' => 'fail', 'message' => 'Unauthorized'], 403);
+        }
+
+        // 1. مسح الحوادث المرتبطة بالعربية (عشان SQL Server ميعملش Error)
         Crash::where('vehicle_id', $id)->delete();
 
-        // مسح trips
+        // 2. مسح الرحلات المرتبطة بالعربية
         Trip::where('vehicle_id', $id)->delete();
 
-        // مسح records
-        Record::where('vehicle_id', $id)->delete(); 
+        // 4. حذف صورة العربية (لو موجودة) من السيرفر عشان نوفر مساحة
+        if ($vehicle->image) {
+            Storage::disk('public')->delete($vehicle->image);
+        }
 
-        // 3. مسح ال vehicle
+        // 5.  مسح العربية نفسها
         $vehicle->delete();
 
         return response()->json([
             'status' => 'success',
             'data' => null,
-            'message' => 'Vehicle deleted successfully'
+            'message' => 'Vehicle and all its related history deleted successfully'
         ]);
     }
 
-    // دالة عشان السواق يعرف العربية المخصصة ليه
-    public function getMyVehicle(Request $request)
-    {
-        // 1. نجيب اليوزر الحالي (السواق)
-        $user = $request->user();
-
-        // 2. نجيب ملفه من جدول السائقين
-        $driver = Driver::where('user_id', $user->id)->first();
-
-        if (!$driver) {
-            return response()->json([
-                'status' => 'fail',
-                'data' => ['message' => 'Driver profile not found']
-            ], 404);
-        }
-
-        // 3. ندور على العربية اللي مربوطة بالسواق ده
-        $vehicle = Vehicle::where('driver_id', $driver->id)->first();
-
-        if (!$vehicle) {
-            return response()->json([
-                'status' => 'fail', 
-                'data' => ['message' => 'No vehicle assigned to you yet']
-            ], 404);
-        }
-
-        // 4. نرجع بيانات العربية
-        return response()->json([
-            'status' => 'success',
-            'data' => ['vehicle' => $vehicle]
-        ]);
-    }
+    
 }
