@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\Crash;
 use App\Models\Trip;
+use App\Models\Trip_location;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Driver;
@@ -98,22 +99,46 @@ class CrashesController extends Controller
             'crashed_at'   => now(),
         ]);
 
-        // 5. تنفيذ الإجراءات (Stop Trip & Notify)
+        // 5. تنفيذ الإجراءات (Alerts & Stop)
         if ($shouldStopTrip && $activeTrip) {
+            
+            // 1. حساب الوقت
+            $endTime = now();
+            $startTime = \Carbon\Carbon::parse($activeTrip->start_time);
+            $hours = $startTime->diffInMinutes($endTime) / 60;
+
+            // 2. حساب المسافة 
             $calculatedDistance = $activeTrip->calculateDistance();
 
+            // 3. السرعة المتوسطة
+            $avgSpeed = ($hours > 0 && $calculatedDistance > 0) ? ($calculatedDistance / $hours) : 0;
+
+            // 4. أقصى سرعة 
+            $maxSpeed = Trip_location::where('trip_id', $activeTrip->id)->max('speed') ?? 0;
+
+            // 5. استخراج آخر مكان للعربية (لتسجيله كنقطة نهاية)
+            $lastLocation = $activeTrip->locations()->latest()->first();
+            $endLat = $lastLocation ? $lastLocation->latitude : $request->latitude;   // لو ملقاش، ياخد مكان الحادثة
+            $endLng = $lastLocation ? $lastLocation->longitude : $request->longitude; // لو ملقاش، ياخد مكان الحادثة
+
+            // 6. التحديث النهائي للرحلة
             $activeTrip->update([
-                'status' => 'completed', 
-                'end_time' => now(),
-                'distance_km' => $calculatedDistance 
+                'status'      => 'completed', 
+                'end_time'    => $endTime,
+                'end_lat'     => $endLat,
+                'end_lng'     => $endLng,
+                'end_address' => 'Ended by Major Crash',
+                'distance_km' => $calculatedDistance,
+                'avg_speed'   => round($avgSpeed, 2),
+                'max_speed'   => round($maxSpeed, 2)
             ]);
         }
 
+        // إرسال الإشعار (Notification)
         if ($shouldNotify && $owner) {
             $crash->setRelation('vehicle', $vehicle);
-            $owner->notify(new CrashAlert($crash)); 
+            $owner->notify(new CrashAlert($crash));
         }
-
         return response()->json([
             'status' => 'success',
             'data' => [
