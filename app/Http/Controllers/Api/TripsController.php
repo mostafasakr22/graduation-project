@@ -108,28 +108,36 @@ class TripsController extends Controller
             return response()->json(['status' => 'fail', 'message' => 'No active trip found for this vehicle'], 404);
         }
 
-        // 1. حساب الوقت (بالساعات)
+        // 1. حساب الوقت
         $endTime = Carbon::now();
         $startTime = Carbon::parse($trip->start_time);
         $hours = $startTime->diffInMinutes($endTime) / 60;
 
-        // 2. (حساب المسافة)
+        // 2. حساب المسافة
         $calculatedDistance = $trip->calculateDistance();
 
-        // 3. حساب السرعة المتوسطة
+        // 3. السرعة المتوسطة
         $avgSpeed = 0;
         if ($hours > 0 && $calculatedDistance > 0) {
             $avgSpeed = $calculatedDistance / $hours;
         }
 
-        // 4. استخراج أقصى سرعة
+        // 4. أقصى سرعة
         $maxSpeed = Trip_location::where('trip_id', $trip->id)->max('speed') ?? 0;
 
-        // 5. التحديث النهائي للرحلة
+        // 5. استخراج آخر مكان للعربية (لتسجيله كنقطة نهاية) 📍
+        $lastLocation = $trip->locations()->latest()->first();
+        
+        $endLat = $lastLocation ? $lastLocation->latitude : null;
+        $endLng = $lastLocation ? $lastLocation->longitude : null;
+
+        // 6. التحديث
         $trip->update([
             'end_time'    => $endTime,
+            'end_lat'     => $endLat, 
+            'end_lng'     => $endLng, 
             'end_address' => $request->end_address ?? 'Ended by Hardware',
-            'distance_km' => $calculatedDistance, 
+            'distance_km' => $calculatedDistance,
             'avg_speed'   => round($avgSpeed, 2),
             'max_speed'   => round($maxSpeed, 2),
             'status'      => 'completed'
