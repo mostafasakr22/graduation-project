@@ -37,12 +37,10 @@ class CrashesController extends Controller
             'vehicle_id' => 'required|exists:vehicles,id',
             'latitude'   => 'required',
             'longitude'  => 'required',
-            // الأنواع المسموح بها من الهاردوير
             'type'       => 'required|in:major_crash,hard_braking,aggressive_turn,road_bump',
-            // القراءات الفيزيائية
-            'g_force_x'  => 'nullable|numeric', // Ax
-            'g_force_y'  => 'nullable|numeric', // Ay
-            'g_force_z'  => 'nullable|numeric', // Az
+            'g_force_x'  => 'nullable|numeric',
+            'g_force_y'  => 'nullable|numeric',
+            'g_force_z'  => 'nullable|numeric',
             'yaw'        => 'nullable|numeric',
             'speed_before' => 'nullable|numeric',
             'rpm_before'   => 'nullable|integer'
@@ -55,7 +53,6 @@ class CrashesController extends Controller
         // 2. البحث عن الرحلة والمالك
         $activeTrip = Trip::where('vehicle_id', $request->vehicle_id)->where('status', 'ongoing')->first();
         
-        // محاولة جلب المالك
         $owner = null;
         $vehicle = Vehicle::with('driver')->find($request->vehicle_id);
         if ($vehicle->user_id) {
@@ -64,18 +61,18 @@ class CrashesController extends Controller
             $owner = User::find($vehicle->driver->owner_id);
         }
 
-        // 3. تحديد الخطورة (Logic Mapping)
+        // 3. تحديد الخطورة والإجراءات
         $severity = 'low';
         $shouldNotify = false;
         $shouldStopTrip = false;
 
         switch ($request->type) {
-            case 'major_crash': // (SOS) خطر
+            case 'major_crash': 
                 $severity = 'critical';
                 $shouldNotify = true;
                 $shouldStopTrip = true;
                 break;
-            case 'hard_braking': // (Driver Scoring) تحذير
+            case 'hard_braking': 
             case 'aggressive_turn':
                 $severity = 'medium';
                 break;
@@ -101,14 +98,20 @@ class CrashesController extends Controller
             'crashed_at'   => now(),
         ]);
 
-        // 5. تنفيذ الإجراءات (Alerts & Stop)
+        // 5. تنفيذ الإجراءات (Stop Trip & Notify)
         if ($shouldStopTrip && $activeTrip) {
-            $activeTrip->update(['status' => 'completed', 'end_time' => now()]);
+            $calculatedDistance = $activeTrip->calculateDistance();
+
+            $activeTrip->update([
+                'status' => 'completed', 
+                'end_time' => now(),
+                'distance_km' => $calculatedDistance 
+            ]);
         }
 
         if ($shouldNotify && $owner) {
             $crash->setRelation('vehicle', $vehicle);
-            $owner->notify(new CrashAlert($crash));
+            $owner->notify(new CrashAlert($crash)); 
         }
 
         return response()->json([

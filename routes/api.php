@@ -14,11 +14,10 @@ use App\Http\Controllers\Api\TripsController;
 // ========================================================================
 // 1. Hardware Communication (رابط الهاردوير) 📟
 // ========================================================================
-// بنفصلهم عشان الهاردوير ميتعبش في موضوع الـ Auth المعقد
-// (ممكن تحميهم بـ Token ثابت في الهيدر لو حبيت، أو تسيبهم Public مؤقتاً للتجربة)
 
 Route::post('/hardware/log-location', [TripsController::class, 'logLocation']); // التتبع الذكي
 Route::post('/hardware/crash-report', [CrashesController::class, 'store']);     // الإبلاغ عن الحوادث
+Route::post('/hardware/end-trip', [TripsController::class, 'hardwareEndTrip']); // انهاء الرحله
 
 
 // ========================================================================

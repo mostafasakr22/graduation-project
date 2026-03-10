@@ -47,4 +47,31 @@ class Trip extends Model
     {
         return $this->hasOne(Crash::class);
     }
+
+    // دالة لحساب المسافة الكلية للرحلة بناءً على النقاط المسجلة
+    public function calculateDistance()
+    {
+        $locations = $this->locations()->orderBy('created_at')->get();
+        
+        if ($locations->count() < 2) return 0;
+
+        $totalDistance = 0;
+        
+        for ($i = 0; $i < $locations->count() - 1; $i++) {
+            $lat1 = $locations[$i]->latitude;
+            $lon1 = $locations[$i]->longitude;
+            $lat2 = $locations[$i + 1]->latitude;
+            $lon2 = $locations[$i + 1]->longitude;
+
+            // معادلة Haversine لحساب المسافة بين نقطتين بالكيلومتر
+            $earthRadius = 6371; 
+            $dLat = deg2rad($lat2 - $lat1);
+            $dLon = deg2rad($lon2 - $lon1);
+            $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);
+            $c = 2 * asin(sqrt($a));
+            $totalDistance += $earthRadius * $c;
+        }
+
+        return round($totalDistance, 2);
+    }
 }
