@@ -28,12 +28,14 @@ Route::post('/hardware/end-trip', [TripsController::class, 'hardwareEndTrip']); 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    });
+    
     // Password Reset
     Route::post('/forget-password', [ForgotPasswordController::class, 'sendOtp']);
     Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOtp']);
     Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
-});
 
+    
 // Protected Routes (للمالك فقط)
 Route::middleware(['auth:sanctum', 'owner'])->group(function () {
     
