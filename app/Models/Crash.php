@@ -10,28 +10,39 @@ class Crash extends Model
     use HasFactory;
 
     protected $fillable = [
+        // الأساسيات
         'vehicle_id',
         'trip_id',
         'crashed_at',
         'latitude',
         'longitude',
         'location',
-        'type',
-        'severity', // النوع والخطورة
-        'g_force_x',
-        'g_force_y',
-        'g_force_z',
-        'yaw', // قراءات الحساسات
+        
+        // التصنيف
+        'type',      // major_crash, hard_braking...
+        'severity',  // low, medium, critical
+
+        // قراءات الحساسات وقت الحادث (IMU)
+        'ax',        // بدل g_force_x
+        'ay',        // بدل g_force_y
+        'az',        // بدل g_force_z
+        'yaw',
+        'pitch',     // الانخفاض/الارتفاع
+        'roll',      // الانقلاب الجانبي
+        
+        // حالة السيارة والمحرك (OBD & GPS)
         'speed_before',
-        'rpm_before'
+        'rpm_before',
+        'coolant_temp',
+        'fuel_level',
+        'dtc_codes',
+        'sats'
     ];
 
-
+    // تحويل الوقت
     protected $casts = [
         'crashed_at' => 'datetime',
     ];
-
-
 
     // الحادث مرتبط بسيارة واحدة
     public function vehicle()

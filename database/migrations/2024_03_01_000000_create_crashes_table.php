@@ -32,12 +32,23 @@ return new class extends Migration {
             $table->string('severity')->default('low'); // low, medium, critical
 
             // القيم الفيزيائية وقت الحدث (للتوثيق Verification)
-            $table->float('g_force_x')->nullable(); // Ax
-            $table->float('g_force_y')->nullable(); // Ay
-            $table->float('g_force_z')->nullable(); // Az
-            $table->float('yaw')->nullable();       // Yaw Change
+            // 1. حساسات الحركة (IMU)
+            $table->float('ax')->nullable();    
+            $table->float('ay')->nullable();    
+            $table->float('az')->nullable();    
+            $table->float('yaw')->nullable();   // الدوران
+            $table->float('pitch')->nullable(); // الصعود/الهبوط (الجديد)
+            $table->float('roll')->nullable();  // الميلان الجانبي (الجديد)
+
+            // 2. بيانات المحرك والسيارة (OBD-II & GPS)
             $table->float('speed_before')->nullable();
             $table->integer('rpm_before')->nullable();
+            $table->float('coolant_temp')->nullable(); // حرارة المحرك (الجديد)
+            $table->float('fuel_level')->nullable();   // مستوى الوقود (الجديد)
+            $table->string('dtc_codes')->nullable();   // أكواد الأعطال (الجديد)
+            $table->integer('sats')->nullable();       // جودة إشارة الأقمار (الجديد)
+
+
 
             $table->timestamps();
         });

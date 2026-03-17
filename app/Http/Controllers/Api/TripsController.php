@@ -18,17 +18,23 @@ class TripsController extends Controller
     public function logLocation(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'vehicle_id' => 'required|exists:vehicles,id',
-            'latitude'   => 'required',
-            'longitude'  => 'required',
-            'speed'      => 'nullable|numeric',
-            'heading'    => 'nullable|numeric',
-            'rpm'        => 'nullable|integer', 
-            'altitude'   => 'nullable|numeric', 
-            'ax'         => 'nullable|numeric', 
-            'ay'         => 'nullable|numeric', 
-            'az'         => 'nullable|numeric', 
-            'yaw'        => 'nullable|numeric', 
+            'vehicle_id'   => 'required|exists:vehicles,id',
+            'latitude'     => 'required',
+            'longitude'    => 'required',
+            'speed'        => 'nullable|numeric',
+            'heading'      => 'nullable|numeric',
+            'rpm'          => 'nullable|integer', 
+            'altitude'     => 'nullable|numeric', 
+            'ax'           => 'nullable|numeric', 
+            'ay'           => 'nullable|numeric', 
+            'az'           => 'nullable|numeric', 
+            'yaw'          => 'nullable|numeric',
+            'pitch'        => 'nullable|numeric',
+            'roll'         => 'nullable|numeric',
+            'coolant_temp' => 'nullable|numeric',
+            'fuel_level'   => 'nullable|numeric',
+            'dtc_codes'    => 'nullable|string',
+            'sats'         => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -57,29 +63,36 @@ class TripsController extends Controller
 
         // حفظ النقطة بكل التفاصيل
         Trip_location::create([
-            'trip_id'   => $trip->id,
-            'latitude'  => $request->latitude,
-            'longitude' => $request->longitude,
-            'speed'     => $request->speed,
-            'heading'   => $request->heading,
-            'rpm'       => $request->rpm,
-            'altitude'  => $request->altitude,
-            'ax'        => $request->ax,
-            'ay'        => $request->ay,
-            'az'        => $request->az,
-            'yaw'       => $request->yaw,
+            'trip_id'      => $trip->id,
+            'latitude'     => $request->latitude,
+            'longitude'    => $request->longitude,
+            'speed'        => $request->speed,
+            'heading'      => $request->heading,
+            'rpm'          => $request->rpm,
+            'altitude'     => $request->altitude,
+            'ax'           => $request->ax,
+            'ay'           => $request->ay,
+            'az'           => $request->az,
+            'yaw'          => $request->yaw,
+            'pitch'        => $request->pitch,
+            'roll'         => $request->roll,
+            'coolant_temp' => $request->coolant_temp,
+            'fuel_level'   => $request->fuel_level,
+            'dtc_codes'    => $request->dtc_codes,
+            'sats'         => $request->sats,
         ]);
 
-        // الإرسال اللايف (Pusher) 🚀
+        // الإرسال اللايف (Pusher) 
         $liveData = [
-            'trip_id'    => $trip->id,
-            'vehicle_id' => $request->vehicle_id,
-            'latitude'   => $request->latitude,
-            'longitude'  => $request->longitude,
-            'speed'      => $request->speed,
-            'heading'    => $request->heading,
-            'rpm'        => $request->rpm,      
-            'altitude'   => $request->altitude  
+            'trip_id'      => $trip->id,
+            'vehicle_id'   => $request->vehicle_id,
+            'latitude'     => $request->latitude,
+            'longitude'    => $request->longitude,
+            'speed'        => $request->speed,
+            'heading'      => $request->heading,
+            'rpm'          => $request->rpm,      
+            'fuel_level'   => $request->fuel_level,  
+            'coolant_temp' => $request->coolant_temp 
         ];
 
         broadcast(new LocationUpdated($liveData));
