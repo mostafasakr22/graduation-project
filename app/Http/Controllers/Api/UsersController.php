@@ -47,9 +47,6 @@ class UsersController extends Controller
         $validator = Validator::make($request->all(), [
             'name'            => 'sometimes|string|max:255',
             'email'           => ['sometimes', 'email', Rule::unique('users')->ignore($owner->id)],
-            'phone_number'    => ['sometimes', 'string', Rule::unique('users')->ignore($owner->id)],
-            'national_number' => ['sometimes', 'string', Rule::unique('users')->ignore($owner->id)],
-            // التحقق من الصورة (نوعها وحجمها 2 ميجا)
             'profile_image'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -112,16 +109,11 @@ class UsersController extends Controller
                 ->delete();
         }
 
-        // 5. مسح السجلات (Records)
-        if ($vehicleIds->count() > 0) {
-            Record::whereIn('vehicle_id', $vehicleIds)->delete();
-        }
-
-        // 6. مسح العربيات والسواقين 
+        // 5. مسح العربيات والسواقين 
         Vehicle::whereIn('id', $vehicleIds)->delete();
         Driver::whereIn('id', $driverIds)->delete();
 
-        // 7. مسح المالك
+        // 6. مسح المالك
         $owner->delete();
 
         return response()->json([
