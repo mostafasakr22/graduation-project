@@ -139,7 +139,18 @@ class CrashesController extends Controller
 
         // إرسال الإشعار (Notification)
         if ($shouldNotify && $owner) {
-            $crash->setRelation('vehicle', $vehicle);
+            // بنجيب بيانات العربية ومعاها بيانات السواق اللي شغال عليها حالياً
+            $vehicleWithDriver = Vehicle::with('driver')->find($request->vehicle_id);
+            
+            // بنحط البيانات دي جوه كائن الحادثة عشان ملف الإشعار يقدر يقراها
+            $crash->setRelation('vehicle', $vehicleWithDriver);
+            
+            // لو في رحلة شغالة، بنحطها برضه عشان الإشعار يقرا منها لو احتاج
+            if ($activeTrip) {
+                $crash->setRelation('trip', $activeTrip);
+            }
+
+            // ابعت الإشعار للمالك
             $owner->notify(new CrashAlert($crash));
         }
 
