@@ -44,6 +44,15 @@ class CrashAlert extends Notification
             $title = '⚠️ Severe Road Bump';
             $reason = 'Hit a bump or pothole violently';
         }
+         elseif ($this->crash->type === 'fuel_leak') {
+            $title = '⛽ Fuel Leak Alert!';
+            $reason = 'Rapid drop in fuel level detected';
+            $icon = 'maintenance_icon';
+        } elseif ($this->crash->type === 'early_warning') {
+            $title = '🔧 Mechanical Failure Warning';
+            $reason = 'Engine overheating or DTC codes detected';
+            $icon = 'maintenance_icon';
+        }
 
         
         $carDetails = $this->crash->vehicle->make . ' (' . $this->crash->vehicle->plate_number . ')';
