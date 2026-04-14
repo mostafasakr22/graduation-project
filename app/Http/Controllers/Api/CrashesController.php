@@ -65,7 +65,7 @@ class CrashesController extends Controller
             $owner = User::find($vehicle->driver->owner_id);
         }
 
-        // 3. تحديد الخطورة والإجراءات
+        // 3. تحديد الخطورة والإجراءات 
         $severity = 'low';
         $shouldNotify = false;
         $shouldStopTrip = false;
@@ -73,12 +73,17 @@ class CrashesController extends Controller
         switch ($request->type) {
             case 'major_crash': 
                 $severity = 'critical';
-                $shouldNotify = true;
-                $shouldStopTrip = true;
+                $shouldNotify = true;  // نبعت إشعار SOS
+                $shouldStopTrip = true; // نوقف الرحلة
+                break;
+            case 'early_warning': 
+            case 'fuel_leak':
+                $severity = 'high';
+                $shouldNotify = true;  // نبعت إشعار صيانة للمالك
                 break;
             case 'hard_braking': 
             case 'aggressive_turn':
-                $severity = 'medium';
+                $severity = 'medium'; // للتقييم والـ Score بس
                 break;
             case 'road_bump':
                 $severity = 'low';

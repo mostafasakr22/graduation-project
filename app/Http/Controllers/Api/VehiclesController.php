@@ -36,6 +36,7 @@ class VehiclesController extends Controller
             'year'         => 'nullable|integer|min:1900|max:' . date('Y'),
             'driver_id'    => 'nullable|exists:drivers,id|unique:vehicles,driver_id',
             'image'        => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'vehicle_class' => 'required|in:sedan,heavy_duty',
         ]);
 
         if ($validator->fails()) {
@@ -57,6 +58,7 @@ class VehiclesController extends Controller
             'year'         => $request->year,
             'driver_id'    => $request->driver_id,
             'image'        => $imagePath,
+            'vehicle_class' => $request->vehicle_class,
         ]);
 
         return response()->json([
@@ -103,6 +105,7 @@ class VehiclesController extends Controller
             'year'         => 'sometimes|integer|min:1900|max:' . date('Y'),
             'driver_id'    => 'sometimes|nullable|exists:drivers,id|unique:vehicles,driver_id,' . $vehicle->id,
             'image'        => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'vehicle_class' => 'sometimes|in:sedan,heavy_duty',
         ]);
 
         if ($validator->fails()) {

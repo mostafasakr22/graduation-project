@@ -22,10 +22,12 @@ return new class extends Migration {
 
             // تصنيف الحدث (زي ما بتوع هندسه عايزين)
             $table->enum('type', [
-                'major_crash',      // حادث جسيم (SOS)
-                'hard_braking',     // فرملة حادة (Scoring)
-                'aggressive_turn',  // انعطاف عدواني (Scoring)
-                'road_bump'         // مطب 
+                'major_crash',      // حادث (اصطدام/انقلاب)
+                'hard_braking',     // فرملة حادة
+                'aggressive_turn',  // انعطاف عدواني
+                'road_bump',        // مطب عنيف
+                'early_warning',    // بداية عطل ميكانيكي (حرارة/اهتزاز)
+                'fuel_leak'         // تسريب وقود
             ]);
 
             // مستوى الخطورة (بنحدده احنا بناءً على النوع)

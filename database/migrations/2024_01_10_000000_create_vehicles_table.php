@@ -20,6 +20,7 @@ return new class extends Migration {
             $table->string('model');
             $table->string('plate_number')->unique();
             $table->year('year')->nullable();
+            $table->enum('vehicle_class', ['sedan', 'heavy_duty'])->default('sedan');
             $table->timestamps();
         });
     }
