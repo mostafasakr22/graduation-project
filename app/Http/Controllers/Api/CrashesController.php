@@ -37,7 +37,7 @@ class CrashesController extends Controller
             'vehicle_id'   => 'required|exists:vehicles,id',
             'latitude'     => 'required',
             'longitude'    => 'required',
-            'type'         => 'required|in:major_crash,hard_braking,aggressive_turn,road_bump',
+            'type'         => 'required|in:major_crash,hard_braking,aggressive_turn,road_bump,early_warning,fuel_leak',
             'ax'           => 'nullable|numeric', 
             'ay'           => 'nullable|numeric', 
             'az'           => 'nullable|numeric', 
