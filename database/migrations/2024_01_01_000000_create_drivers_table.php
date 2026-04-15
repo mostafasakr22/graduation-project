@@ -11,7 +11,7 @@ return new class extends Migration {
         Schema::create('drivers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');
-             $table->string('name');
+             $table->string('name')->nullable();
             $table->timestamps();
         });
     }
