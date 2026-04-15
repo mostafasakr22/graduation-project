@@ -14,7 +14,8 @@ class Vehicle extends Model
         'plate_number',
         'driver_id',
         'image',
-        'vehicle_class'
+        'vehicle_class',
+        'vehicle_name'
     ];
 
     //  السيارة تتبع مستخدم

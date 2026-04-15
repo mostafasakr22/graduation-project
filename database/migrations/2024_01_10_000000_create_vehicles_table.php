@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('driver_id')->nullable()->constrained('drivers')->onDelete('set null')->unique();
             $table->foreignId('user_id')->constrained('users')->onDelete('no action');
+            $table->string('vehicle_name')->nullable();
             $table->string('plate_number')->unique();
             $table->enum('vehicle_class', ['sedan', 'heavy_duty'])->default('sedan');
             $table->timestamps();

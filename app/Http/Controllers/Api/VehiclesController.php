@@ -30,6 +30,7 @@ class VehiclesController extends Controller
       public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'vehicle_name'  => 'nullable|string|max:255',
             'plate_number' => 'required|string|unique:vehicles',
             'driver_id'    => 'nullable|exists:drivers,id|unique:vehicles,driver_id',
             'image'        => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -49,6 +50,7 @@ class VehiclesController extends Controller
         // 2. create
         $vehicle = Vehicle::create([
             'user_id'      => Auth::id(),
+             'vehicle_name'  => $request->vehicle_name,
             'plate_number' => $request->plate_number,
             'driver_id'    => $request->driver_id,
             'image'        => $imagePath,
@@ -93,6 +95,7 @@ class VehiclesController extends Controller
 
         // Validation
         $validator = Validator::make($request->all(), [
+            'vehicle_name'  => 'sometimes|nullable|string|max:255',
             'plate_number' => 'sometimes|string|unique:vehicles,plate_number,' . $vehicle->id,
             'driver_id'    => 'sometimes|nullable|exists:drivers,id|unique:vehicles,driver_id,' . $vehicle->id,
             'image'        => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',

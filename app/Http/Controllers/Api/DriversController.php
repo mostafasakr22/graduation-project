@@ -34,12 +34,14 @@ class DriversController extends Controller
     {
         // 1. Validation 
         $validator = Validator::make($request->all(), [
-            'name'=> 'required|string|max:255',
+            'name'=> 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['status' => 'fail', 'data' => $validator->errors()], 422);
         }
+
+        $driverName = $request->name ?? 'Unknown';
 
         // 2. إنشاء السائق (بيانات فقط)
         $driver = Driver::create([
