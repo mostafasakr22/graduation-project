@@ -31,9 +31,6 @@ class VehiclesController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'plate_number' => 'required|string|unique:vehicles',
-            'make'         => 'required|string',
-            'model'        => 'required|string',
-            'year'         => 'nullable|integer|min:1900|max:' . date('Y'),
             'driver_id'    => 'nullable|exists:drivers,id|unique:vehicles,driver_id',
             'image'        => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'vehicle_class' => 'required|in:sedan,heavy_duty',
@@ -53,9 +50,6 @@ class VehiclesController extends Controller
         $vehicle = Vehicle::create([
             'user_id'      => Auth::id(),
             'plate_number' => $request->plate_number,
-            'make'         => $request->make,
-            'model'        => $request->model,
-            'year'         => $request->year,
             'driver_id'    => $request->driver_id,
             'image'        => $imagePath,
             'vehicle_class' => $request->vehicle_class,
@@ -99,10 +93,7 @@ class VehiclesController extends Controller
 
         // Validation
         $validator = Validator::make($request->all(), [
-            'make'         => 'sometimes|string|max:255',
-            'model'        => 'sometimes|string|max:255',
             'plate_number' => 'sometimes|string|unique:vehicles,plate_number,' . $vehicle->id,
-            'year'         => 'sometimes|integer|min:1900|max:' . date('Y'),
             'driver_id'    => 'sometimes|nullable|exists:drivers,id|unique:vehicles,driver_id,' . $vehicle->id,
             'image'        => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'vehicle_class' => 'sometimes|in:sedan,heavy_duty',
