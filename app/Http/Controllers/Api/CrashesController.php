@@ -19,12 +19,26 @@ class CrashesController extends Controller
     // Show All Crashes
     public function index()
     {
-        $crashes = Crash::with(['vehicle', 'trip'])->orderBy('crashed_at', 'desc')->get();
+        // 1. جلب أرقام عربيات المالك الحالي 
+        $vehicleIds = Vehicle::where('user_id', auth()->id())->pluck('id');
 
+        // 2. جلب الحوادث المرتبطة بالعربيات دي (مع بيانات العربية والرحلة)
+        $crashes = Crash::whereIn('vehicle_id', $vehicleIds)
+                        ->with(['vehicle', 'trip'])
+                        ->orderBy('crashed_at', 'desc')
+                        ->get();
+
+        // 3. حساب الإجمالي (Total)
+        $totalCrashes = $crashes->count();
+
+        // 4. إرسال الرد (Response)
         return response()->json([
             'status' => 'success',
             'data' => [
-                'crashes' => $crashes
+                'stats' => [
+                    'total_crashes' => $totalCrashes 
+                ],
+                'crashes' => $crashes 
             ]
         ]);
     }

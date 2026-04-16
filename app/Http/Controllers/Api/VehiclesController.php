@@ -18,11 +18,31 @@ class VehiclesController extends Controller
     // Show all vehicles 
     public function index()
     {
-        $vehicles = Vehicle::where('user_id', Auth::id())->get();
+        // 1. جلب كل سيارات المالك الحالي
+        $vehicles = Vehicle::where('user_id', auth()->id())->get();
 
+        // 2. حساب إجمالي السيارات (Total Vehicles)
+        $totalVehicles = $vehicles->count();
+
+        // 3. حساب السيارات الشغالة حالياً (Active Vehicles) 
+        // العربية شغالة لو ليها رحلة حالتها 'ongoing'
+        // plunk('id') بتاخد أرقام العربيات بتاعت المالك بس
+        $vehicleIds = $vehicles->pluck('id');
+        
+        $activeVehicles = Trip::whereIn('vehicle_id', $vehicleIds)
+                                          ->where('status', 'ongoing')
+                                          ->count();
+
+        // 4. إرسال الرد (Response) 
         return response()->json([
             'status' => 'success',
-            'data' => $vehicles
+            'data' => [
+                'stats' => [
+                    'total_vehicles'        => $totalVehicles,
+                    'total_active_vehicles' => $activeVehicles,
+                ],
+                'vehicles' => $vehicles
+            ]
         ]);
     }
 
