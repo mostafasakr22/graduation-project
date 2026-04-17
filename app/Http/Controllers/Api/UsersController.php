@@ -9,6 +9,7 @@ use App\Models\Vehicle;
 use App\Models\Driver;
 use App\Models\Record;
 use App\Models\Trip;
+use App\Models\Trip_location;
 use App\Models\Crash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -90,39 +91,40 @@ class UsersController extends Controller
             return response()->json(['status' => 'fail', 'data' => ['message' => 'Owner not found']], 404);
         }
 
-        // 2. تجهيز القوائم (IDs) للمتعلقات
-        // بنجيب أرقام العربيات والسواقين عشان نعرف نمسح الحاجات المرتبطة بيهم الأول
+        // 2. تجلب المعرفات
         $vehicleIds = Vehicle::where('user_id', $owner->id)->pluck('id');
-        $driverIds = Driver::where('user_id', $owner->id)->pluck('id');
+        $driverIds = Driver::where('owner_id', $owner->id)->pluck('id'); // تأكد هل هو owner_id ولا user_id
 
-        // 3. مسح الحوادث (Crashes)
-        // لأن الحادثة مرتبطة بالعربية، فلازم تتمسح قبل العربية
-        if ($vehicleIds->count() > 0) {
+        // 3. مسح الحوادث
+        if ($vehicleIds->isNotEmpty()) {
             Crash::whereIn('vehicle_id', $vehicleIds)->delete();
         }
 
-        // 4. مسح الرحلات (Trips)
-        // لأن الرحلة مرتبطة بالعربية والسواق
-        if ($vehicleIds->count() > 0 || $driverIds->count() > 0) {
-            Trip::whereIn('vehicle_id', $vehicleIds)
-                ->orWhereIn('driver_id', $driverIds)
-                ->delete();
+        // 4. مسح أماكن الرحلات (مهم جداً قبل مسح الرحلات نفسها)
+        $tripIds = Trip::whereIn('vehicle_id', $vehicleIds)->orWhereIn('driver_id', $driverIds)->pluck('id');
+        if ($tripIds->isNotEmpty()) {
+            // لو عندك موديل اسمه TripLocation امسح منه الأول
+             \DB::table('trip_locations')->whereIn('trip_id', $tripIds)->delete();
         }
 
-        // 5. مسح العربيات والسواقين 
+        // 5. مسح الرحلات
+        Trip::whereIn('id', $tripIds)->delete();
+
+        // 6. مسح العربيات والسواقين
         Vehicle::whereIn('id', $vehicleIds)->delete();
         Driver::whereIn('id', $driverIds)->delete();
+        
+        // 7. مسح الإشعارات (عشان ميعملش تعارض مع جدول الـ notifications)
+        $owner->notifications()->delete();
 
-        // 6. مسح المالك
+        // 8. مسح المالك نفسه
         $owner->delete();
 
         return response()->json([
             'status' => 'success',
-            'data' => null,
-            'message' => 'Owner deleted successfully'
+            'message' => 'Owner and all related data deleted successfully'
         ]);
     }
-
     // جلب الإشعارات (للمالك)
     public function getNotifications(Request $request)
     {
