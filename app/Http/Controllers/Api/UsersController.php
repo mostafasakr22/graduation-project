@@ -37,49 +37,58 @@ class UsersController extends Controller
 
     // 3. Update Owner
     public function update(Request $request, $id)
-    {
-        $owner = User::where('role', 'owner')->find($id);
+{
+    // 1. البحث عن المالك
+    $owner = User::where('role', 'owner')->find($id);
 
-        if (!$owner) {
-            return response()->json(['status' => 'fail', 'data' => ['message' => 'Owner not found']], 404);
-        }
-
-        // 1. Validation
-        $validator = Validator::make($request->all(), [
-            'name'            => 'sometimes|string|max:255',
-            'email'           => ['sometimes', 'email', Rule::unique('users')->ignore($owner->id)],
-            'profile_image'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['status' => 'fail', 'data' => $validator->errors()], 422);
-        }
-
-        // 2. تجهيز البيانات للتحديث
-        $data = $request->except(['profile_image']); 
-
-        // 3. التعامل مع الصورة (لو تم رفع صورة جديدة)
-        if ($request->hasFile('profile_image')) {
-            // أ) مسح الصورة القديمة (عشان نوفر مساحة)
-            if ($owner->profile_image) {
-                // تأكد إنك عامل import: use Illuminate\Support\Facades\Storage;
-                Storage::disk('public')->delete($owner->profile_image);
-            }
-
-            // ب) تخزين الصورة الجديدة وحفظ مسارها
-            $path = $request->file('profile_image')->store('profile_images', 'public');
-            $data['profile_image'] = $path;
-        }
-
-        // 4. تنفيذ التحديث
-        $owner->update($data);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Owner updated successfully',
-            'data' => ['owner' => $owner]
-        ]);
+    if (!$owner) {
+        return response()->json(['status' => 'fail', 'data' => ['message' => 'Owner not found']], 404);
     }
+
+    // 2. الـ Validation
+    $validator = \Validator::make($request->all(), [
+        'name'            => 'sometimes|string|max:255',
+        'email'           => ['sometimes', 'email', Rule::unique('users')->ignore($owner->id)],
+        'profile_image'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['status' => 'fail', 'data' => $validator->errors()], 422);
+    }
+
+    // 3. تجهيز البيانات للتحديث (باستثناء الصورة في البداية)
+    $data = $request->except(['profile_image']); 
+
+    // 4. التعامل مع الصورة (لو فيه صورة جديدة)
+    if ($request->hasFile('profile_image')) {
+        // أ) مسح الصورة القديمة من السيرفر لو موجودة
+        if ($owner->profile_image) {
+            \Storage::disk('public')->delete($owner->profile_image);
+        }
+
+        // ب) تخزين الجديدة
+        $path = $request->file('profile_image')->store('profile_images', 'public');
+        $data['profile_image'] = $path;
+    }
+
+    // 5. تنفيذ التحديث
+    $owner->update($data);
+
+    // 6. الرد (Response) بنفس تنسيق الـ Register عشان بتاع الفلاتر ميتلخبطش
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Owner updated successfully',
+        'data' => [
+            'owner' => [
+                'id' => $owner->id,
+                'name' => $owner->name,
+                'email' => $owner->email,
+                'profile_image' => $owner->profile_image ? url('storage/' . $owner->profile_image) : null,
+                'updated_at' => $owner->updated_at,
+            ]
+        ]
+    ]);
+}
 
     // 4. Delete Owner
     public function delete($id)
