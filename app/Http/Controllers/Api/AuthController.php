@@ -12,47 +12,57 @@ class AuthController extends Controller
 {
     // Register
     public function register(Request $request)
-    {
-        $validator = \Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+{
+    // 1. التحقق من البيانات
+    $validator = \Validator::make($request->all(), [
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|email|unique:users',
+        'password' => 'required|string|min:6|confirmed',
+        'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'fail',
-                'data' => $validator->errors()
-            ], 422);
-        }
-
-         $imagePath = null;
-        if ($request->hasFile('profile_image')) {
-            // بنخزنها في فولدر storage/app/public/profile_images
-            $imagePath = $request->file('profile_image')->store('profile_images', 'public');
-        }
-
-        $data = $validator->validated();
-
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            'profile_image' => $imagePath,
-            
-        ]);
-
-        $token = $user->createToken('api_token')->plainTextToken;
-
+    if ($validator->fails()) {
         return response()->json([
-            'status' => 'success',
-            'data' => [
-                'user' => $user,
-                'token' => $token,
-            ]
-        ], 201);
+            'status' => 'fail',
+            'data' => $validator->errors()
+        ], 422);
     }
+
+    // 2. معالجة رفع الصورة
+    $imagePath = null;
+    if ($request->hasFile('profile_image')) {
+        // سيتم تخزينها في storage/app/public/profile_images
+        // وترجع المسار: "profile_images/filename.jpg"
+        $imagePath = $request->file('profile_image')->store('profile_images', 'public');
+    }
+
+    // 3. إنشاء المستخدم
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => \Hash::make($request->password),
+        'profile_image' => $imagePath,
+    ]);
+
+    // 4. إنشاء التوكن
+    $token = $user->createToken('api_token')->plainTextToken;
+
+    // 5. الرد (Response) مع الرابط الكامل للصورة
+    return response()->json([
+        'status' => 'success',
+        'data' => [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'profile_image' => $user->profile_image ? url('storage/' . $user->profile_image) : null,
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
+            ],
+            'token' => $token,
+        ]
+    ], 201);
+}
 
     // Login
     public function login(Request $request)
