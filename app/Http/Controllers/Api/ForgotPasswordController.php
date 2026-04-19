@@ -30,7 +30,7 @@ class ForgotPasswordController extends Controller
 
         $email = $request->email;
         $otp = rand(100000, 999999);
-        $expiresAt = Carbon::now()->addMinutes(10);
+        $expiresAt = Carbon::now()->addMinutes(1);
 
         // Store OTP in DB
         PasswordOtp::updateOrCreate(
