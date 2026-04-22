@@ -37,6 +37,7 @@ class MqttListener extends Command
                             'severity' => isset($data['temp']) && $data['temp'] > 50 ? 'High' : 'Normal',
                             'details' => $data['status'] ?? 'MQTT Test',
                             'location' => '30.0444, 31.2357',
+                            'crashed_at' => now(),
                         ]);
 
                         $this->info("✅ Success: Data saved to database.");
