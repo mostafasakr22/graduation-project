@@ -44,6 +44,9 @@ class MqttListener extends Command
                             'severity' => isset($data['temp']) && $data['temp'] > 50 ? 'critical' : 'medium',
 
                             // قيم اختيارية (Nullable)
+                            'ax' => $data['ax'] ?? null,
+                            'ay' => $data['ay'] ?? null,
+                            'az' => $data['az'] ?? null,
                             'coolant_temp' => $data['temp'] ?? null,
                             'speed_before' => $data['speed'] ?? null,
                         ]);
