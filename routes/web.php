@@ -1,18 +1,13 @@
-<?php
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
-use Illuminate\Support\Facades\Route;
-
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
-*/
-
-Route::get('/', function () {
-    return view('welcome');
+Route::get('/debug-mqtt', function () {
+    return [
+        'PHP_Version' => PHP_VERSION,
+        'Mqtt_Library_Installed' => is_dir(base_path('vendor/php-mqtt')),
+        'Facade_Class_Exists' => class_exists(\PhpMqtt\Laravel\Facades\Mqtt::class),
+        'Config_Loaded' => config('mqtt.connections.default.host'),
+        'App_URL' => config('app.url'),
+        'Environment' => app()->environment(),
+    ];
 });
