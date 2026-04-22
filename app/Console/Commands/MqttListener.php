@@ -24,26 +24,33 @@ class MqttListener extends Command
             // التوبيك اللي بنجرب عليه في MQTT X
             $topic = 'graduation/test/data';
 
-            $mqtt->subscribe($topic, function (string $topic, string $message) {
+            $mqtt->subscribe($topic, function ($topic, $message) {
                 $this->info("Received: " . $message);
-
                 $data = json_decode($message, true);
 
                 if ($data) {
                     try {
-                        // بنحاول نسجل في الداتابيز
                         \App\Models\Crash::create([
-                            'vehicle_id' => $data['vehicle_id'] ?? 1,
-                            'severity' => isset($data['temp']) && $data['temp'] > 50 ? 'High' : 'Normal',
-                            'details' => $data['status'] ?? 'MQTT Test',
-                            'location' => '30.0444, 31.2357',
+                            'vehicle_id' => $data['vehicle_id'] ?? 1, // تأكد إن الـ ID ده موجود في جدول vehicles
                             'crashed_at' => now(),
+                            'latitude' => $data['lat'] ?? '30.0444',
+                            'longitude' => $data['long'] ?? '31.2357',
+                            'location' => 'Cairo, Egypt',
+
+                            // ده العمود اللي كان هيعملك المشكلة الجاية
+                            // لازم تختار قيمة من: major_crash, hard_braking, road_bump, الخ
+                            'type' => 'major_crash',
+
+                            'severity' => isset($data['temp']) && $data['temp'] > 50 ? 'critical' : 'medium',
+
+                            // قيم اختيارية (Nullable)
+                            'coolant_temp' => $data['temp'] ?? null,
+                            'speed_before' => $data['speed'] ?? null,
                         ]);
 
-                        $this->info("✅ Success: Data saved to database.");
-
+                        $this->info("✅ Success: Crash recorded in database!");
                     } catch (\Exception $e) {
-                        // السطر ده هيطبع لك في الـ SSH لو الداتابيز رفضت وليه رفضت
+                        // عشان لو حصل Error بسبب Foreign Key أو غيره يظهرلك هنا بوضوح
                         $this->error("❌ Database Error: " . $e->getMessage());
                     }
                 }
