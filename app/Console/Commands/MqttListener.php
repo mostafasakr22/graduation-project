@@ -3,37 +3,27 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use PhpMqtt\Client\Facades\MQTT;
+// امسح سطر الـ use القديم بتاع Mqtt وجرب تناديه بالمسار الكامل تحت
 
 class MqttListener extends Command
 {
     protected $signature = 'mqtt:listen';
-    protected $description = 'Test MQTT Listening';
+    protected $description = 'Test MQTT';
 
-   public function handle()
-{
-    $this->info('Connecting directly to MQTT Broker...');
+    public function handle()
+    {
+        $this->info('Waiting for data...');
 
-    // بننادي المكتبة الأم مباشرة (بدون استخدام Facades)
-    // المسار ده موجود في أي نسخة من المكتبة
-    $host = 'broker.emqx.io'; 
-    $port = 1883;
-    $clientId = 'azure_client_' . rand(1, 999);
-
-    try {
-        // استخدام الكلاس الخام مباشرة
-        $mqtt = new \PhpMqtt\Client\MqttClient($host, $port, $clientId);
-        $mqtt->connect();
+        // استخدمنا المسار الكامل هنا عشان نهرب من أي مشكلة في الـ discovery
+        $mqtt = MQTT::connection();
         
-        $this->info("Connected successfully to $host");
+        $topic = 'graduation/test/data';
 
-        $mqtt->subscribe('v1/devices/me/telemetry', function ($topic, $message) {
-            echo "Data Received: $message \n";
+        $mqtt->subscribe($topic, function (string $topic, string $message) {
+            $this->info("Received: " . $message);
         }, 0);
 
         $mqtt->loop(true);
-
-    } catch (\Exception $e) {
-        $this->error("Connection Failed: " . $e->getMessage());
     }
-}
 }
