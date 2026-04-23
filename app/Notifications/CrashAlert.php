@@ -55,7 +55,7 @@ class CrashAlert extends Notification
         }
 
         
-        $carDetails = $this->crash->vehicle->make . ' (' . $this->crash->vehicle->plate_number . ')';
+        $carDetails = $this->crash->vehicle->vehicle_name . ' (' . $this->crash->vehicle->plate_number . ')';
         $driverName = $this->crash->vehicle->driver->name ?? 'Unknown Driver';
 
         $crashTime = $this->crash->crashed_at->format('h:i A'); 
