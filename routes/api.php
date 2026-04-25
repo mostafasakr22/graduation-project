@@ -42,6 +42,8 @@ Route::middleware(['auth:sanctum', 'owner'])->group(function () {
     // User Info & Logout
     Route::get('/user', function (Request $request) { return $request->user(); });
     Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::post('/auth/change-password', [AuthController::class, 'changePassword']); 
+
 
     // 🔔 Notifications (أهم حاجة للمالك)
     Route::get('/notifications', [UsersController::class, 'getNotifications']);
