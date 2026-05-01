@@ -115,13 +115,6 @@ class MqttListener extends Command
         //لما يحصل حادثه شديده يلغي الرحله
         if ($crash->type === 'major_crash' && $activeTrip) {
             $this->finalizeTrip($activeTrip, $data['lat'] ?? null, $data['long'] ?? null);
-
-            $activeTrip->update([
-                'end_time' => now(),
-                'end_lat' => $crash->latitude,
-                'end_lng' => $crash->longitude,
-                'status' => 'completed'
-            ]);
             $this->info("🚨 Trip $activeTrip->id has been AUTO-ENDED due to a major crash.");
         }
 
@@ -176,13 +169,6 @@ class MqttListener extends Command
             $trip = Trip::where('vehicle_id', $vehicle_id)->where('status', 'ongoing')->latest()->first();
             if ($trip) {
                 $this->finalizeTrip($trip, $data['lat'] ?? null, $data['long'] ?? null);
-
-                $trip->update([
-                    'end_time' => now(),
-                    'end_lat' => $data['lat'] ?? null,
-                    'end_lng' => $data['long'] ?? null,
-                    'status' => 'completed'
-                ]);
                 $this->info("🏁 Trip Ended for car $vehicle_id");
             }
         }
