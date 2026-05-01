@@ -111,17 +111,17 @@ class MqttListener extends Command
             'dtc_codes' => $data['dtc'] ?? null,
             'sats' => $data['sats'] ?? null,
         ]);
-        
+
         //لما يحصل حادثه شديده يلغي الرحله
-         if ($crash->type === 'major_crash' && $activeTrip) {
-        $activeTrip->update([
-            'end_time' => now(),
-            'end_lat'  => $crash->latitude,
-            'end_lng'  => $crash->longitude,
-            'status'   => 'completed'
-        ]);
-        $this->info("🚨 Trip $activeTrip->id has been AUTO-ENDED due to a major crash.");
-    }
+        if ($crash->type === 'major_crash' && $activeTrip) {
+            $activeTrip->update([
+                'end_time' => now(),
+                'end_lat' => $crash->latitude,
+                'end_lng' => $crash->longitude,
+                'status' => 'completed'
+            ]);
+            $this->info("🚨 Trip $activeTrip->id has been AUTO-ENDED due to a major crash.");
+        }
 
         // إرسال الإشعارات
         $alertTypes = ['major_crash', 'fuel_leak', 'early_warning'];
@@ -182,5 +182,36 @@ class MqttListener extends Command
                 $this->info("🏁 Trip Ended for car $vehicle_id");
             }
         }
+    }
+
+    // دالة موحدة لحساب المسافة والسرعة وقفل الرحلة 
+    public function finalizeTrip($trip, $endLat, $endLng)
+    {
+        $endTime = Carbon::now();
+        $startTime = Carbon::parse($trip->start_time);
+
+        // حساب الساعات للسرعة المتوسطة
+        $hours = $startTime->diffInMinutes($endTime) / 60;
+
+        // حساب المسافة (بتنادي الدالة اللي في الـ Model)
+        $calculatedDistance = $trip->calculateDistance();
+
+        // حساب السرعة المتوسطة
+        $avgSpeed = ($hours > 0 && $calculatedDistance > 0) ? ($calculatedDistance / $hours) : 0;
+
+        // حساب أقصى سرعة من جدول المواقع
+        $maxSpeed = Trip_location::where('trip_id', $trip->id)->max('speed') ?? 0;
+
+        $trip->update([
+            'end_time' => $endTime,
+            'end_lat' => $endLat,
+            'end_lng' => $endLng,
+            'distance_km' => round($calculatedDistance, 2),
+            'avg_speed' => round($avgSpeed, 2),
+            'max_speed' => round($maxSpeed, 2),
+            'status' => 'completed'
+        ]);
+
+        $this->info("🏁 Trip Finalized: {$calculatedDistance}km");
     }
 }
