@@ -10,11 +10,20 @@ class Trip extends Model
     use HasFactory;
 
     protected $fillable = [
-        'vehicle_id','driver_id',
-        'start_time','end_time',
-        'start_address','end_address',
-        'start_lat','start_lng','end_lat','end_lng',
-        'status','distance_km','avg_speed','max_speed'    
+        'vehicle_id',
+        'driver_id',
+        'start_time',
+        'end_time',
+        'start_address',
+        'end_address',
+        'start_lat',
+        'start_lng',
+        'end_lat',
+        'end_lng',
+        'status',
+        'distance_km',
+        'avg_speed',
+        'max_speed'
     ];
 
     protected $casts = [
@@ -22,7 +31,7 @@ class Trip extends Model
         'end_time' => 'datetime',
     ];
 
-    
+
 
     // 1. الرحلة تابعة لمركبة
     public function vehicle()
@@ -51,27 +60,27 @@ class Trip extends Model
     // دالة لحساب المسافة الكلية للرحلة بناءً على النقاط المسجلة
     public function calculateDistance()
     {
-        $locations = $this->locations()->orderBy('created_at')->get();
-        
-        if ($locations->count() < 2) return 0;
-
+        $locations = $this->locations()->orderBy('created_at', 'asc')->get();
         $totalDistance = 0;
-        
-        for ($i = 0; $i < $locations->count() - 1; $i++) {
-            $lat1 = $locations[$i]->latitude;
-            $lon1 = $locations[$i]->longitude;
-            $lat2 = $locations[$i + 1]->latitude;
-            $lon2 = $locations[$i + 1]->longitude;
 
-            // معادلة Haversine لحساب المسافة بين نقطتين بالكيلومتر
-            $earthRadius = 6371; 
-            $dLat = deg2rad($lat2 - $lat1);
-            $dLon = deg2rad($lon2 - $lon1);
-            $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);
-            $c = 2 * asin(sqrt($a));
-            $totalDistance += $earthRadius * $c;
+        for ($i = 0; $i < count($locations) - 1; $i++) {
+            $totalDistance += $this->haversineDistance(
+                $locations[$i]->latitude,
+                $locations[$i]->longitude,
+                $locations[$i + 1]->latitude,
+                $locations[$i + 1]->longitude
+            );
         }
+        return $totalDistance;
+    }
 
-        return round($totalDistance, 2);
+    private function haversineDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371; // km
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) * sin($dLat / 2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) * sin($dLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        return $earthRadius * $c;
     }
 }

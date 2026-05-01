@@ -114,6 +114,8 @@ class MqttListener extends Command
 
         //لما يحصل حادثه شديده يلغي الرحله
         if ($crash->type === 'major_crash' && $activeTrip) {
+            $this->finalizeTrip($activeTrip, $data['lat'] ?? null, $data['long'] ?? null);
+
             $activeTrip->update([
                 'end_time' => now(),
                 'end_lat' => $crash->latitude,
@@ -173,6 +175,8 @@ class MqttListener extends Command
         } elseif ($event == 'engine_off') {
             $trip = Trip::where('vehicle_id', $vehicle_id)->where('status', 'ongoing')->latest()->first();
             if ($trip) {
+                $this->finalizeTrip($trip, $data['lat'] ?? null, $data['long'] ?? null);
+
                 $trip->update([
                     'end_time' => now(),
                     'end_lat' => $data['lat'] ?? null,
@@ -185,7 +189,7 @@ class MqttListener extends Command
     }
 
     // دالة موحدة لحساب المسافة والسرعة وقفل الرحلة 
-    public function finalizeTrip($trip, $endLat, $endLng)
+    private function finalizeTrip($trip, $endLat, $endLng)
     {
         $endTime = Carbon::now();
         $startTime = Carbon::parse($trip->start_time);
