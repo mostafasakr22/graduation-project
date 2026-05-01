@@ -145,7 +145,7 @@ class MqttListener extends Command
                 'coolant_temp' => $data['temp'] ?? null,
                 'sats' => $data['sats'] ?? null,
             ]);
-            // $this->info("📍 Location logged");
+            $this->info("📍 Location logged");
         }
     }
 
