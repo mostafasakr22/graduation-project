@@ -3,66 +3,142 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use PhpMqtt\Client\Facades\MQTT;
-// تأكد أن هذا الـ Use هو اللي شغال عندك (بناءً على الكود اللي بعته)
+use PhpMqtt\Laravel\Facades\Mqtt;
+use App\Models\Trip;
+use App\Models\Trip_location;
+use App\Models\Crash;
+use App\Models\Vehicle;
+use App\Notifications\CrashAlert;
 
 class MqttListener extends Command
 {
-    // الاسم اللي بنشغل بيه الأمر
     protected $signature = 'mqtt:listen';
-    protected $description = 'Listen to MQTT Test Data and save to Database';
+    protected $description = 'Comprehensive MQTT Listener for Black-Box';
 
     public function handle()
     {
-        $this->info('--- MQTT Test Mode Started ---');
-        $this->info('Connecting to: broker.emqx.io');
+        $this->info('🚀 Black-Box Comprehensive Listener is active...');
+        $mqtt = \PhpMqtt\Client\Facades\MQTT::connection();
 
-        try {
-            // الاتصال بالبروكر
-            $mqtt = MQTT::connection();
+        // السماع لكل العمليات: telemetry, safety, trip
+        $mqtt->subscribe('blackbox/v1/car/+/+', function (string $topic, string $message) {
 
-            // التوبيك اللي بنجرب عليه في MQTT X
-            $topic = 'graduation/test/data';
+            $parts = explode('/', $topic);
+            $vehicle_id = $parts[3];
+            $action = $parts[4];
 
-            $mqtt->subscribe($topic, function ($topic, $message) {
-                $this->info("Received: " . $message);
-                $data = json_decode($message, true);
+            $data = json_decode($message, true);
+            if (!$data) {
+                $this->warn("Invalid JSON received on $topic");
+                return;
+            }
 
-                if ($data) {
-                    try {
-                        \App\Models\Crash::create([
-                            'vehicle_id' => $data['vehicle_id'] ?? 1, // تأكد إن الـ ID ده موجود في جدول vehicles
-                            'crashed_at' => now(),
-                            'latitude' => $data['lat'] ?? '30.0444',
-                            'longitude' => $data['long'] ?? '31.2357',
-                            'location' => 'Cairo, Egypt',
+            switch ($action) {
+                case 'telemetry':
+                    $this->handleTelemetry($vehicle_id, $data);
+                    break;
+                case 'safety':
+                    $this->handleSafety($vehicle_id, $data);
+                    break;
+                case 'trip':
+                    $this->handleTripLifecycle($vehicle_id, $data);
+                    break;
+            }
+        }, 0);
 
-                            // ده العمود اللي كان هيعملك المشكلة الجاية
-                            // لازم تختار قيمة من: major_crash, hard_braking, road_bump, الخ
-                            'type' => 'major_crash',
+        $mqtt->loop(true);
+    }
 
-                            'severity' => isset($data['temp']) && $data['temp'] > 50 ? 'critical' : 'medium',
+    // 1. معالجة بيانات الحوادث والأمان (تطابق كامل مع جدول الـ Crash)
+    private function handleSafety($vehicle_id, $data)
+    {
+        $this->info("⚠️ Safety event detected for car $vehicle_id");
 
-                            // قيم اختيارية (Nullable)
-                            'ax' => $data['ax'] ?? null,
-                            'ay' => $data['ay'] ?? null,
-                            'az' => $data['az'] ?? null,
-                            'coolant_temp' => $data['temp'] ?? null,
-                            'speed_before' => $data['speed'] ?? null,
-                        ]);
+        // البحث عن الرحلة الحالية لربطها بالحادثة
+        $activeTrip = Trip::where('vehicle_id', $vehicle_id)->where('status', 'ongoing')->latest()->first();
 
-                        $this->info("✅ Success: Crash recorded in database!");
-                    } catch (\Exception $e) {
-                        // عشان لو حصل Error بسبب Foreign Key أو غيره يظهرلك هنا بوضوح
-                        $this->error("❌ Database Error: " . $e->getMessage());
-                    }
-                }
-            }, 0);
-            // يخلي الكود شغال ميفصلش
-            $mqtt->loop(true);
+        $crash = Crash::create([
+            'trip_id' => $activeTrip ? $activeTrip->id : null,
+            'vehicle_id' => $vehicle_id,
+            'crashed_at' => now(),
+            'latitude' => $data['lat'] ?? '0.0',
+            'longitude' => $data['long'] ?? '0.0',
+            'location' => $data['location'] ?? null,
+            'type' => $data['type']  ,
+            'severity' => $data['severity'] ?? 'low',
 
-        } catch (\Exception $e) {
-            $this->error("❌ Error: " . $e->getMessage());
+            // بيانات حساسات الحركة (IMU)
+            'ax' => $data['ax'] ?? null,
+            'ay' => $data['ay'] ?? null,
+            'az' => $data['az'] ?? null,
+            'yaw' => $data['yaw'] ?? null,
+            'pitch' => $data['pitch'] ?? null,
+            'roll' => $data['roll'] ?? null,
+
+            // بيانات المحرك والسيارة (OBD-II & GPS)
+            'speed_before' => $data['speed'] ?? null,
+            'rpm_before' => $data['rpm'] ?? null,
+            'coolant_temp' => $data['temp'] ?? null,
+            'fuel_level' => $data['fuel'] ?? null,
+            'dtc_codes' => $data['dtc'] ?? null,
+            'sats' => $data['sats'] ?? null,
+        ]);
+
+        // إرسال الإشعار للمالك في الحالات الخطيرة
+        $alertTypes = ['major_crash', 'fuel_leak', 'early_warning'];
+        if (in_array($crash->type, $alertTypes)) {
+            $vehicle = Vehicle::with('user')->find($vehicle_id);
+            if ($vehicle && $vehicle->user) {
+                $vehicle->user->notify(new CrashAlert($crash));
+                $this->info("🔔 Notification sent to {$vehicle->user->name}");
+            }
+        }
+    }
+
+    // 2. معالجة التتبع اللحظي (Telemetry)
+    private function handleTelemetry($vehicle_id, $data)
+    {
+        $activeTrip = Trip::where('vehicle_id', $vehicle_id)->where('status', 'ongoing')->latest()->first();
+        if ($activeTrip) {
+            Trip_location::create([
+                'trip_id' => $activeTrip->id,
+                'latitude' => $data['lat'],
+                'longitude' => $data['long'],
+                'speed' => $data['speed'] ?? 0,
+                'heading' => $data['heading'] ?? null,
+                'rpm' => $data['rpm'] ?? null,
+                'fuel_level' => $data['fuel'] ?? null,
+                'coolant_temp' => $data['temp'] ?? null,
+                'sats' => $data['sats'] ?? null,
+            ]);
+        }
+    }
+
+    // 3. معالجة دورة حياة الرحلة (Trip)
+    private function handleTripLifecycle($vehicle_id, $data)
+    {
+        if (($data['event'] ?? '') == 'engine_on') {
+            $vehicle = Vehicle::find($vehicle_id);
+            Trip::create([
+                'vehicle_id' => $vehicle_id,
+                'driver_id' => $vehicle->driver_id ?? null,
+                'start_time' => now(),
+                'start_lat' => $data['lat'] ?? '0.0',
+                'start_lng' => $data['long'] ?? '0.0',
+                'status' => 'ongoing'
+            ]);
+            $this->info("🔑 Trip Started for car $vehicle_id");
+        } elseif (($data['event'] ?? '') == 'engine_off') {
+            $trip = Trip::where('vehicle_id', $vehicle_id)->where('status', 'ongoing')->latest()->first();
+            if ($trip) {
+                $trip->update([
+                    'end_time' => now(),
+                    'end_lat' => $data['lat'] ?? null,
+                    'end_lng' => $data['long'] ?? null,
+                    'status' => 'completed'
+                ]);
+                $this->info("🏁 Trip Ended for car $vehicle_id");
+            }
         }
     }
 }
