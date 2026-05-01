@@ -111,6 +111,17 @@ class MqttListener extends Command
             'dtc_codes' => $data['dtc'] ?? null,
             'sats' => $data['sats'] ?? null,
         ]);
+        
+        //لما يحصل حادثه شديده يلغي الرحله
+         if ($crash->type === 'major_crash' && $activeTrip) {
+        $activeTrip->update([
+            'end_time' => now(),
+            'end_lat'  => $crash->latitude,
+            'end_lng'  => $crash->longitude,
+            'status'   => 'completed'
+        ]);
+        $this->info("🚨 Trip $activeTrip->id has been AUTO-ENDED due to a major crash.");
+    }
 
         // إرسال الإشعارات
         $alertTypes = ['major_crash', 'fuel_leak', 'early_warning'];
