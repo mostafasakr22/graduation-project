@@ -18,17 +18,14 @@ class Vehicle extends Model
         'vehicle_name'
     ];
 
+
+
     //  السيارة تتبع مستخدم
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    //  السيارة تحتوي على قراءات متعددة
-    public function records()
-    {
-        return $this->hasMany(Record::class);
-    }
 
     // السيارة تحتوي على عدة حوادث
     public function crashes()
