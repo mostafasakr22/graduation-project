@@ -144,7 +144,7 @@ class MqttListener extends Command
             $vehicle = Vehicle::findOrFail($vehicle_id);
             Trip::create([
                 'vehicle_id' => $vehicle_id,
-                'driver_id' => $vehicle->driver_id ?? null,
+                'driver_id' => $vehicle->driver_id,
                 'start_time' => now(),
                 'start_lat' => $data['lat'] ?? '0.0',
                 'start_lng' => $data['long'] ?? '0.0',
