@@ -53,13 +53,11 @@ jobs:
       - name: Unzip artifact for deployment
         run: unzip release.zip
       
-      # تم حذف خطوة Azure Login لأننا سنستخدم Publish Profile مباشرة في الخطوة التالية
-
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: 'graduation-black-box' 
+          app-name: 'Grad-Black-Box' 
           slot-name: 'Production'
           package: .
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
