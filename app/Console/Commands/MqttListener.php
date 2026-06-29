@@ -45,10 +45,16 @@ class MqttListener extends Command
         $this->info("📩 New Message on [$topic]");
 
         $parts = explode('/', $topic);
-        if (count($parts) < 5) return;
+        if (count($parts) < 5)
+            return;
 
         $vehicle_id = $parts[3];
         $action = $parts[4];
+
+        if (!is_numeric($vehicle_id)) {
+            $this->error("❌ Invalid vehicle ID received: $vehicle_id");
+            return;
+        }
 
         $data = json_decode($message, true);
         if (!$data) {
@@ -81,22 +87,26 @@ class MqttListener extends Command
         $activeTrip = Trip::where('vehicle_id', $vehicle_id)->where('status', 'ongoing')->latest()->first();
 
         $crash = Crash::create([
-            'trip_id'      => $activeTrip ? $activeTrip->id : null,
-            'vehicle_id'   => $vehicle_id,
-            'crashed_at'   => now(),
-            'latitude'     => $data['lat'] ?? '0.0',
-            'longitude'    => $data['long'] ?? '0.0',
-            'location'     => $data['location'] ?? null,
-            'type'         => $data['type'] ?? 'major_crash',
-            'severity'     => $data['severity'] ?? 'low',
-            'ax' => $data['ax'] ?? null, 'ay' => $data['ay'] ?? null, 'az' => $data['az'] ?? null,
-            'yaw' => $data['yaw'] ?? null, 'pitch' => $data['pitch'] ?? null, 'roll' => $data['roll'] ?? null,
+            'trip_id' => $activeTrip ? $activeTrip->id : null,
+            'vehicle_id' => $vehicle_id,
+            'crashed_at' => now(),
+            'latitude' => $data['lat'] ?? '0.0',
+            'longitude' => $data['long'] ?? '0.0',
+            'location' => $data['location'] ?? null,
+            'type' => $data['type'] ?? 'major_crash',
+            'severity' => $data['severity'] ?? 'low',
+            'ax' => $data['ax'] ?? null,
+            'ay' => $data['ay'] ?? null,
+            'az' => $data['az'] ?? null,
+            'yaw' => $data['yaw'] ?? null,
+            'pitch' => $data['pitch'] ?? null,
+            'roll' => $data['roll'] ?? null,
             'speed_before' => $data['speed'] ?? null,
-            'rpm_before'   => $data['rpm'] ?? null,
+            'rpm_before' => $data['rpm'] ?? null,
             'coolant_temp' => $data['temp'] ?? null,
-            'fuel_level'   => $data['fuel'] ?? null,
-            'dtc_codes'    => $data['dtc'] ?? null,
-            'sats'         => $data['sats'] ?? null,
+            'fuel_level' => $data['fuel'] ?? null,
+            'dtc_codes' => $data['dtc'] ?? null,
+            'sats' => $data['sats'] ?? null,
         ]);
 
         $this->info("✅ Crash saved (ID: {$crash->id})");
@@ -121,14 +131,14 @@ class MqttListener extends Command
         $activeTrip = Trip::where('vehicle_id', $vehicle_id)->where('status', 'ongoing')->latest()->first();
         if ($activeTrip) {
             Trip_location::create([
-                'trip_id'      => $activeTrip->id,
-                'latitude'     => $data['lat'] ?? '0.0',
-                'longitude'    => $data['long'] ?? '0.0',
-                'speed'        => $data['speed'] ?? 0,
-                'fuel_level'   => $data['fuel'] ?? null,
+                'trip_id' => $activeTrip->id,
+                'latitude' => $data['lat'] ?? '0.0',
+                'longitude' => $data['long'] ?? '0.0',
+                'speed' => $data['speed'] ?? 0,
+                'fuel_level' => $data['fuel'] ?? null,
                 'coolant_temp' => $data['temp'] ?? null,
-                'rpm'          => $data['rpm'] ?? null,
-                'sats'         => $data['sats'] ?? null,
+                'rpm' => $data['rpm'] ?? null,
+                'sats' => $data['sats'] ?? null,
             ]);
             $this->info("📍 Location logged for trip {$activeTrip->id}");
         } else {
